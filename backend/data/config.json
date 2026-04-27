@@ -1,0 +1,90 @@
+{
+  "toolContracts": {
+    "request_demo": { "version": "1.0.0", "permission": "public" },
+    "capture_lead": { "version": "1.0.0", "permission": "public" },
+    "escalate_to_human": { "version": "1.0.0", "permission": "all" },
+    "create_support_ticket": { "version": "1.0.0", "permission": "authenticated" },
+    "fetch_workspace_config": { "version": "1.0.0", "permission": "admin" },
+    "fetch_my_data_summary": { "version": "1.0.0", "permission": "employee" }
+  },
+  "workspaceConfigs": {
+    "screenshotFrequency": "Every 10 minutes where policy enables screenshots",
+    "idleThreshold": "5 minutes of inactivity before idle status",
+    "transparencyMode": "Employee-visible transparency notices enabled",
+    "retentionPolicy": "90 days authenticated support conversations, 30 days anonymous sales conversations"
+  },
+  "employeeSummaries": {
+    "employee_001": {
+      "visibility": [
+        "Time entries and activity states",
+        "Screenshot policy if enabled for your workspace",
+        "Idle time and break classifications",
+        "Correction and dispute workflow status"
+      ],
+      "correctionRoute": "Open a correction request with your timesheet note and manager context.",
+      "privacyNote": "You can only view your own summary in Kairos."
+    }
+  },
+  "bootstrap": {
+    "assistantName": "Kairos",
+    "assistantBadge": "ZoikoTime conversational intelligence",
+    "welcomeMessage": "I'm Kairos, ZoikoTime's assistant. I can help you understand the platform, compare plans, explain transparency, guide setup, and route support or demo requests.",
+    "welcomeContext": "Responses stay grounded in approved ZoikoTime sources, respect the active role boundary, and always keep a human route available.",
+    "surfaceOptions": [
+      { "value": "website", "label": "Website", "userState": "public" },
+      { "value": "admin", "label": "Admin", "userState": "admin" },
+      { "value": "employee", "label": "Employee", "userState": "employee" },
+      { "value": "connect", "label": "Connect", "userState": "authenticated" }
+    ],
+    "surfaceMeta": {
+      "website": {
+        "title": "Public website guidance",
+        "subtitle": "Product, pricing, trust, and demo routing"
+      },
+      "admin": {
+        "title": "Admin workspace guidance",
+        "subtitle": "Policy setup, reports, implementation, and support routing"
+      },
+      "employee": {
+        "title": "Employee transparency guidance",
+        "subtitle": "Own-data visibility, screenshots, idle time, and corrections"
+      },
+      "connect": {
+        "title": "Zoiko Connect assistance",
+        "subtitle": "Permission-scoped support and governed collaboration help"
+      }
+    },
+    "starterPrompts": {
+      "website": [
+        "What is ZoikoTime?",
+        "Show pricing options",
+        "How do screenshots work?",
+        "I want a demo"
+      ],
+      "admin": [
+        "Explain the current workspace configuration",
+        "How do reports work?",
+        "Show screenshot policy guidance",
+        "I need implementation help"
+      ],
+      "employee": [
+        "What can my manager see?",
+        "How do correction requests work?",
+        "Explain idle time",
+        "Show my data summary"
+      ],
+      "connect": [
+        "How can Kairos help inside Zoiko Connect?",
+        "Escalate this to a human",
+        "Summarize support options",
+        "What permissions apply here?"
+      ]
+    },
+    "statusNotes": {
+      "website": "Website surface - Product, pricing, trust, and demo guidance",
+      "admin": "Admin surface - Policy-aware guidance - Audit-friendly",
+      "employee": "Employee surface - Own-data only - Correction route available",
+      "connect": "Connect surface - Permission-scoped help - No cross-channel leakage"
+    }
+  }
+}
