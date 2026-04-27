@@ -4,7 +4,7 @@ import chatbotRoutes from "./routes/chatbotRoutes.js";
 
 const app = express();
 const preferredPort = Number(process.env.PORT) || 5001;
-const allowedOrigins = new Set(["http://localhost:5176"]);
+const allowedOrigins = new Set(["http://localhost:5175"]);
 
 app.use(
   cors({
