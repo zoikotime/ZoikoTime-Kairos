@@ -1,0 +1,121 @@
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap");
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    color-scheme: light;
+    font-family: "Inter", "Segoe UI", sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: #eff6ff;
+  }
+
+  button,
+  input,
+  textarea {
+    font: inherit;
+  }
+}
+
+@layer utilities {
+  .zoiko-widget {
+    width: 420px;
+    max-width: calc(100vw - 12px);
+    height: calc(100dvh - 12px);
+    max-height: calc(100dvh - 12px);
+    border-radius: 20px;
+    animation: zoiko-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .zoiko-dots {
+    background-image: radial-gradient(circle, rgba(37, 99, 235, 0.08) 1px, transparent 1px);
+    background-size: 28px 28px;
+    animation: zoiko-drift 30s linear infinite;
+  }
+
+  .zoiko-scrollbar::-webkit-scrollbar {
+    width: 3px;
+  }
+
+  .zoiko-scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 3px;
+    background: rgba(32, 196, 154, 0.2);
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(59, 130, 246, 0.32);
+  }
+}
+
+@keyframes zoiko-drift {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(28px, 28px);
+  }
+}
+
+@keyframes zoiko-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .zoiko-widget {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .zoiko-widget {
+    width: min(560px, calc(100vw - 40px));
+    height: min(800px, calc(100dvh - 40px));
+    border-radius: 24px;
+  }
+}
+
+@media (min-width: 1025px) {
+  .zoiko-widget {
+    width: 460px;
+    height: min(760px, calc(100dvh - 60px));
+    border-radius: 24px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .zoiko-widget {
+    width: 500px;
+    height: min(800px, calc(100dvh - 80px));
+  }
+}
