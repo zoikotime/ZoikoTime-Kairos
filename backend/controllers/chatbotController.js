@@ -1,4 +1,4 @@
-import {
+const {
   buildReply,
   createConversationId,
   createSessionId,
@@ -8,9 +8,9 @@ import {
   logSafety,
   recordConversation,
   runTool,
-} from "../services/chatbotService.js";
+} = require("../services/chatbotService");
 
-export function getHealth(_req, res) {
+function getHealth(_req, res) {
   res.json({
     status: "ok",
     service: "zoikotime-kairos-backend",
@@ -26,14 +26,14 @@ export function getHealth(_req, res) {
   });
 }
 
-export function getBootstrapData(_req, res) {
+function getBootstrapData(_req, res) {
   res.json({
     success: true,
     ...getBootstrap(),
   });
 }
 
-export function sendChatMessage(req, res) {
+function sendChatMessage(req, res) {
   const {
     message,
     sessionId = createSessionId(),
@@ -69,19 +69,14 @@ export function sendChatMessage(req, res) {
   });
 }
 
-export function createSupportRequest(req, res) {
+function createSupportRequest(req, res) {
   const { issue, contact = "unknown", surface = "website", priority = "normal" } = req.body ?? {};
 
   if (!issue) {
     return res.status(400).json({ error: "issue_required" });
   }
 
-  const result = runTool("create_support_ticket", {
-    issue,
-    contact,
-    surface,
-    priority,
-  });
+  const result = runTool("create_support_ticket", { issue, contact, surface, priority });
 
   if (!result.output) {
     return res.status(500).json({
@@ -90,13 +85,10 @@ export function createSupportRequest(req, res) {
     });
   }
 
-  return res.json({
-    success: true,
-    ticket: result.output,
-  });
+  return res.json({ success: true, ticket: result.output });
 }
 
-export function getWorkspaceConfig(req, res) {
+function getWorkspaceConfig(req, res) {
   const role = req.query.role ?? "public";
 
   if (role !== "admin") {
@@ -107,16 +99,11 @@ export function getWorkspaceConfig(req, res) {
     });
   }
 
-  const configKey = req.query.key ?? null;
-  const result = runTool("fetch_workspace_config", { configKey });
-
-  return res.json({
-    success: true,
-    config: result.output,
-  });
+  const result = runTool("fetch_workspace_config", { configKey: req.query.key ?? null });
+  return res.json({ success: true, config: result.output });
 }
 
-export function getEmployeeSummary(req, res) {
+function getEmployeeSummary(req, res) {
   const userState = req.query.userState ?? "public";
 
   if (userState !== "employee") {
@@ -131,22 +118,30 @@ export function getEmployeeSummary(req, res) {
     employeeId: req.query.employeeId ?? "employee_001",
   });
 
-  return res.json({
-    success: true,
-    summary: result.output,
-  });
+  return res.json({ success: true, summary: result.output });
 }
 
-export function getHistory(req, res) {
+function getHistory(req, res) {
   res.json({
     success: true,
     items: getConversationHistory(req.params.sessionId),
   });
 }
 
-export function getOverview(_req, res) {
+function getOverview(_req, res) {
   res.json({
     success: true,
     ...getAdminOverview(),
   });
 }
+
+module.exports = {
+  getHealth,
+  getBootstrapData,
+  sendChatMessage,
+  createSupportRequest,
+  getWorkspaceConfig,
+  getEmployeeSummary,
+  getHistory,
+  getOverview,
+};

@@ -1,5 +1,5 @@
-import { Router } from "express";
-import {
+const { Router } = require("express");
+const {
   createSupportRequest,
   getBootstrapData,
   getEmployeeSummary,
@@ -8,17 +8,17 @@ import {
   getOverview,
   getWorkspaceConfig,
   sendChatMessage,
-} from "../controllers/chatbotController.js";
+} = require("../controllers/chatbotController");
 
 const router = Router();
 
 router.get("/health", getHealth);
-router.get("/api/bootstrap", getBootstrapData);
-router.post("/api/chatbot", sendChatMessage);
-router.post("/api/support", createSupportRequest);
-router.get("/api/workspace-config", getWorkspaceConfig);
-router.get("/api/employee-summary", getEmployeeSummary);
-router.get("/api/history/:sessionId", getHistory);
-router.get("/api/admin/overview", getOverview);
+router.get("/bootstrap", getBootstrapData);
+router.post("/chatbot", sendChatMessage);
+router.post("/support", createSupportRequest);
+router.get("/workspace-config", getWorkspaceConfig);
+router.get("/employee-summary", getEmployeeSummary);
+router.get("/history/:sessionId", getHistory);
+router.get("/admin/overview", getOverview);
 
-export default router;
+module.exports = router;

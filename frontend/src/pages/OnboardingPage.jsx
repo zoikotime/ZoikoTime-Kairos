@@ -11,7 +11,22 @@ import {
 } from "lucide-react";
 import { verifyUser } from "../services/api";
 import { useStore } from "../store/useStore";
-import { uiText } from "../data/translations";
+
+// ─── UI Text (i18n) ───────────────────────────────────────────────────────────
+const uiText = {
+  en: {
+    onboardingTag: "Powered by ZoikoTime",
+  },
+  fr: {
+    onboardingTag: "Propulsé par ZoikoTime",
+  },
+  es: {
+    onboardingTag: "Desarrollado por ZoikoTime",
+  },
+  de: {
+    onboardingTag: "Unterstützt von ZoikoTime",
+  },
+};
 
 export default function OnboardingPage() {
   const navigate = useNavigate();

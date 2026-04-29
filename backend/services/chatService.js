@@ -4,8 +4,27 @@ const { v4: uuidv4 } = require("uuid");
 const Chat = require("../models/Chat");
 const Conversation = require("../models/Conversation");
 
+// FIXED: Point to correct knowledge.json location (root, not /data)
+// const knowledgePath = path.resolve(__dirname, "..", "data", "knowledge.json");
+// const knowledgeDocument = JSON.parse(fs.readFileSync(knowledgePath, "utf-8"));
 const knowledgePath = path.resolve(__dirname, "..", "data", "knowledge.json");
-const knowledgeDocument = JSON.parse(fs.readFileSync(knowledgePath, "utf-8"));
+let knowledgeDocument;
+try {
+  const rawData = fs.readFileSync(knowledgePath, "utf-8");
+  knowledgeDocument = JSON.parse(rawData);
+  console.log(
+    `✅ Knowledge loaded: ${knowledgeDocument.intents?.length || 0} intents`,
+  );
+} catch (e) {
+  console.error(`❌ Failed to load: ${knowledgePath}`, e.message);
+  knowledgeDocument = {
+    _meta: { assistantName: "Koiris" },
+    intents: [],
+    fallback: "Knowledge base failed to load",
+    default_suggestions: [],
+    search_redirects: [],
+  };
+}
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 
 const inMemoryHistory = new Map();
@@ -24,7 +43,8 @@ function tokenize(text = "") {
 }
 
 function personalizeText(text = "") {
-  const assistantDisplayName = knowledgeDocument?._meta?.assistantName || "Koiris";
+  const assistantDisplayName =
+    knowledgeDocument?._meta?.assistantName || "Koiris";
   return text
     .replace(/\bKairos\b/g, assistantDisplayName)
     .replace(/\bZoikoTime assistant\b/g, `${assistantDisplayName} assistant`);
@@ -50,7 +70,6 @@ function extractQuestion(intent = {}) {
   if (Array.isArray(intent.keywords) && intent.keywords.length > 0) {
     return intent.keywords[0];
   }
-
   return "General help";
 }
 
@@ -84,52 +103,33 @@ const greetingIntent =
     intent.keywords.some((keyword) =>
       ["hi", "hello", "hey", "help", "start"].includes(normalizeText(keyword)),
     ),
-  ) || intents[0] || null;
+  ) ||
+  intents[0] ||
+  null;
 
 function scoreEntry(message, entry) {
   const messageText = normalizeText(message);
   const messageTokens = new Set(tokenize(message));
-
   let score = 0;
-
-  if (messageText.includes(normalizeText(entry.question))) {
-    score += 10;
-  }
-
+  if (messageText.includes(normalizeText(entry.question))) score += 10;
   for (const keyword of entry.keywords) {
     const normalizedKeyword = normalizeText(keyword);
     if (!normalizedKeyword) continue;
-
-    if (messageText.includes(normalizedKeyword)) {
-      score += 5;
-    }
-
+    if (messageText.includes(normalizedKeyword)) score += 5;
     for (const token of tokenize(keyword)) {
       if (messageTokens.has(token)) score += 1.25;
     }
   }
-
   for (const token of tokenize(entry.question)) {
     if (messageTokens.has(token)) score += 0.85;
   }
-
   return score;
-}
-
-function buildSuggestions(bestMatchId) {
-  const related = intents
-    .filter((entry) => entry.id !== bestMatchId)
-    .slice(0, 3)
-    .map((entry) => entry.question);
-
-  return related.length > 0 ? related : defaultSuggestions.slice(0, 3);
 }
 
 function buildFallbackAnswer(language = "en") {
   const fallbackSource =
     knowledgeDocument.fallback ||
     "I want to make sure I help you correctly. Could you clarify what you need?";
-
   return {
     id: uuidv4(),
     answer: personalizeText(fallbackSource),
@@ -141,11 +141,10 @@ function buildFallbackAnswer(language = "en") {
 }
 
 function buildWelcomeMessage(_language = "en") {
-  if (greetingIntent?.answer) {
-    return greetingIntent.answer;
-  }
-
-  return personalizeText(knowledgeDocument.fallback || "How can I help you today?");
+  if (greetingIntent?.answer) return greetingIntent.answer;
+  return personalizeText(
+    knowledgeDocument.fallback || "How can I help you today?",
+  );
 }
 
 function localizeAnswer(entry, language) {
@@ -156,14 +155,19 @@ function localizeAnswer(entry, language) {
 function createSessionId() {
   return uuidv4();
 }
-
 function createEmployeeId(company, email) {
-  const companyCode = (company || "zoiko").replace(/\s+/g, "").slice(0, 4).toUpperCase();
+  const companyCode = (company || "zoiko")
+    .replace(/\s+/g, "")
+    .slice(0, 4)
+    .toUpperCase();
   const userCode = (email || "user").split("@")[0].slice(0, 4).toUpperCase();
   return `${companyCode}-${userCode}-${Date.now().toString().slice(-4)}`;
 }
-
-function createConversationSnapshot({ sessionId, user, title = "New conversation" }) {
+function createConversationSnapshot({
+  sessionId,
+  user,
+  title = "New conversation",
+}) {
   return {
     sessionId,
     userEmail: user?.email || "unknown@local",
@@ -179,7 +183,6 @@ function createConversationSnapshot({ sessionId, user, title = "New conversation
     expiresAt: createExpiryDate(),
   };
 }
-
 function getInMemoryConversation(sessionId) {
   const conversation = inMemoryConversations.get(sessionId);
   if (!conversation) return null;
@@ -190,7 +193,6 @@ function getInMemoryConversation(sessionId) {
   }
   return conversation;
 }
-
 async function upsertConversation({ sessionId, user, title, preview, status }) {
   const expiresAt = createExpiryDate();
   const payload = {
@@ -202,19 +204,18 @@ async function upsertConversation({ sessionId, user, title, preview, status }) {
     lastMessageAt: new Date(),
     expiresAt,
   };
-
   if (title) payload.title = summarizeText(title, 70);
   if (preview !== undefined) payload.preview = summarizeText(preview, 150);
   if (status) payload.status = status;
-
-  const current = getInMemoryConversation(sessionId) || createConversationSnapshot({ sessionId, user });
+  const current =
+    getInMemoryConversation(sessionId) ||
+    createConversationSnapshot({ sessionId, user });
   const nextConversation = {
     ...current,
     ...payload,
     messageCount: current.messageCount || 0,
   };
   inMemoryConversations.set(sessionId, nextConversation);
-
   try {
     const existing = await Conversation.findOne({ sessionId });
     const messageCount = existing?.messageCount || current.messageCount || 0;
@@ -223,17 +224,15 @@ async function upsertConversation({ sessionId, user, title, preview, status }) {
       {
         ...payload,
         title: payload.title || existing?.title || current.title,
-        preview: payload.preview !== undefined ? payload.preview : existing?.preview || current.preview,
+        preview:
+          payload.preview !== undefined
+            ? payload.preview
+            : existing?.preview || current.preview,
         messageCount,
         startedAt: existing?.startedAt || current.startedAt || new Date(),
       },
-      {
-        new: true,
-        upsert: true,
-        setDefaultsOnInsert: true,
-      },
+      { new: true, upsert: true, setDefaultsOnInsert: true },
     );
-
     inMemoryConversations.set(sessionId, {
       sessionId: record.sessionId,
       userEmail: record.userEmail,
@@ -248,15 +247,18 @@ async function upsertConversation({ sessionId, user, title, preview, status }) {
       lastMessageAt: record.lastMessageAt,
       expiresAt: record.expiresAt,
     });
-  } catch (_error) {
-    // Fallback stays in memory.
-  }
-
+  } catch (_error) {}
   return nextConversation;
 }
-
-async function incrementConversationMessageCount(sessionId, user, content, role) {
-  const current = getInMemoryConversation(sessionId) || createConversationSnapshot({ sessionId, user });
+async function incrementConversationMessageCount(
+  sessionId,
+  user,
+  content,
+  role,
+) {
+  const current =
+    getInMemoryConversation(sessionId) ||
+    createConversationSnapshot({ sessionId, user });
   const nextCount = (current.messageCount || 0) + 1;
   const nextTitle =
     current.title && current.title !== "New conversation"
@@ -264,7 +266,6 @@ async function incrementConversationMessageCount(sessionId, user, content, role)
       : role === "user"
         ? summarizeText(content, 70)
         : current.title;
-
   const nextConversation = {
     ...current,
     title: nextTitle || "New conversation",
@@ -273,9 +274,7 @@ async function incrementConversationMessageCount(sessionId, user, content, role)
     lastMessageAt: new Date(),
     expiresAt: createExpiryDate(),
   };
-
   inMemoryConversations.set(sessionId, nextConversation);
-
   try {
     await Conversation.findOneAndUpdate(
       { sessionId },
@@ -298,11 +297,8 @@ async function incrementConversationMessageCount(sessionId, user, content, role)
       },
       { new: true, upsert: true, setDefaultsOnInsert: true },
     );
-  } catch (_error) {
-    // Fallback remains in memory.
-  }
+  } catch (_error) {}
 }
-
 async function createConversationForUser(user) {
   const sessionId = createSessionId();
   const conversation = await upsertConversation({
@@ -312,16 +308,10 @@ async function createConversationForUser(user) {
     preview: "",
     status: "active",
   });
-
-  return {
-    sessionId,
-    expiresAt: conversation.expiresAt,
-  };
+  return { sessionId, expiresAt: conversation.expiresAt };
 }
-
 async function findOrCreateConversationForUser(user) {
   const now = new Date();
-
   try {
     const existing = await Conversation.findOne({
       userEmail: user?.email || "unknown@local",
@@ -329,17 +319,9 @@ async function findOrCreateConversationForUser(user) {
     })
       .sort({ lastMessageAt: -1 })
       .lean();
-
-    if (existing) {
-      return {
-        sessionId: existing.sessionId,
-        expiresAt: existing.expiresAt,
-      };
-    }
-  } catch (_error) {
-    // Continue to memory fallback.
-  }
-
+    if (existing)
+      return { sessionId: existing.sessionId, expiresAt: existing.expiresAt };
+  } catch (_error) {}
   const memoryConversation = [...inMemoryConversations.values()]
     .filter(
       (conversation) =>
@@ -347,17 +329,13 @@ async function findOrCreateConversationForUser(user) {
         new Date(conversation.expiresAt).getTime() > Date.now(),
     )
     .sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt))[0];
-
-  if (memoryConversation) {
+  if (memoryConversation)
     return {
       sessionId: memoryConversation.sessionId,
       expiresAt: memoryConversation.expiresAt,
     };
-  }
-
   return createConversationForUser(user);
 }
-
 async function endConversation(sessionId, userEmail) {
   const conversation = getInMemoryConversation(sessionId);
   if (conversation && (!userEmail || conversation.userEmail === userEmail)) {
@@ -365,33 +343,36 @@ async function endConversation(sessionId, userEmail) {
     conversation.lastMessageAt = new Date();
     inMemoryConversations.set(sessionId, conversation);
   }
-
   try {
     await Conversation.findOneAndUpdate(
       { sessionId, ...(userEmail ? { userEmail } : {}) },
-      { status: "ended", lastMessageAt: new Date(), expiresAt: createExpiryDate() },
+      {
+        status: "ended",
+        lastMessageAt: new Date(),
+        expiresAt: createExpiryDate(),
+      },
     );
-  } catch (_error) {
-    // Memory fallback is enough for local mode.
-  }
+  } catch (_error) {}
 }
-
 async function deleteConversation(sessionId, userEmail) {
   inMemoryConversations.delete(sessionId);
   inMemoryHistory.delete(sessionId);
-
   try {
-    await Conversation.deleteOne({ sessionId, ...(userEmail ? { userEmail } : {}) });
+    await Conversation.deleteOne({
+      sessionId,
+      ...(userEmail ? { userEmail } : {}),
+    });
     await Chat.deleteMany({ sessionId, ...(userEmail ? { userEmail } : {}) });
-  } catch (_error) {
-    // Memory fallback only.
-  }
+  } catch (_error) {}
 }
-
 async function listUserConversations(userEmail) {
   const now = Date.now();
   const memoryConversations = [...inMemoryConversations.values()]
-    .filter((conversation) => conversation.userEmail === userEmail && new Date(conversation.expiresAt).getTime() > now)
+    .filter(
+      (conversation) =>
+        conversation.userEmail === userEmail &&
+        new Date(conversation.expiresAt).getTime() > now,
+    )
     .sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt))
     .map((conversation) => ({
       sessionId: conversation.sessionId,
@@ -403,7 +384,6 @@ async function listUserConversations(userEmail) {
       lastMessageAt: conversation.lastMessageAt,
       expiresAt: conversation.expiresAt,
     }));
-
   try {
     const conversations = await Conversation.find({
       userEmail,
@@ -411,7 +391,6 @@ async function listUserConversations(userEmail) {
     })
       .sort({ lastMessageAt: -1 })
       .lean();
-
     if (conversations.length) {
       return conversations.map((conversation) => ({
         sessionId: conversation.sessionId,
@@ -424,17 +403,13 @@ async function listUserConversations(userEmail) {
         expiresAt: conversation.expiresAt,
       }));
     }
-  } catch (_error) {
-    // Use memory fallback.
-  }
-
+  } catch (_error) {}
   return memoryConversations;
 }
 
 function generateChatReply(message, language = "en") {
   const normalizedMessage = normalizeText(message);
   const emailManagerPrompt = knowledgeDocument.email_manager_prompt;
-
   if (
     emailManagerPrompt &&
     Array.isArray(emailManagerPrompt.trigger_keywords) &&
@@ -451,21 +426,12 @@ function generateChatReply(message, language = "en") {
       timestamp: new Date().toISOString(),
     };
   }
-
   const ranked = intents
-    .map((entry) => ({
-      ...entry,
-      score: scoreEntry(message, entry),
-    }))
+    .map((entry) => ({ ...entry, score: scoreEntry(message, entry) }))
     .sort((a, b) => b.score - a.score);
-
   const bestMatch = ranked[0];
-  if (!bestMatch || bestMatch.score < 3) {
-    return buildFallbackAnswer(language);
-  }
-
+  if (!bestMatch || bestMatch.score < 3) return buildFallbackAnswer(language);
   const confidence = Math.min(0.99, Number((bestMatch.score / 16).toFixed(2)));
-
   return {
     id: uuidv4(),
     answer: localizeAnswer(bestMatch, language),
@@ -480,7 +446,6 @@ function getChatContext() {
   const assistantName = personalizeText(
     knowledgeDocument._meta?.assistantName || "Koiris",
   );
-
   return {
     assistantName,
     productName: knowledgeDocument._meta?.product || "ZoikoTime",
@@ -488,18 +453,28 @@ function getChatContext() {
     statusText: "Live knowledge base active",
     welcomeMessage: buildWelcomeMessage("en"),
     welcomeMessageHi: buildWelcomeMessage("en"),
-    quickActions: quickActions.length > 0 ? quickActions : defaultSuggestions.slice(0, 6).map((item) => ({
-      id: slugify(item),
-      label: item,
-      prompt: item,
-      message: item,
-    })),
+    quickActions:
+      quickActions.length > 0
+        ? quickActions
+        : defaultSuggestions.slice(0, 6).map((item) => ({
+            id: slugify(item),
+            label: item,
+            prompt: item,
+            message: item,
+          })),
     defaultSuggestions: defaultSuggestions.slice(0, 6),
     retentionHours: 24,
   };
 }
 
-async function saveMessage({ sessionId, user, userEmail, role, content, metadata = {} }) {
+async function saveMessage({
+  sessionId,
+  user,
+  userEmail,
+  role,
+  content,
+  metadata = {},
+}) {
   const expiresAt = createExpiryDate();
   const message = {
     id: uuidv4(),
@@ -508,17 +483,14 @@ async function saveMessage({ sessionId, user, userEmail, role, content, metadata
     metadata,
     timestamp: new Date().toISOString(),
   };
-
   const existing = inMemoryHistory.get(sessionId) || [];
   inMemoryHistory.set(sessionId, [...existing, message]);
-
   await incrementConversationMessageCount(
     sessionId,
     user || { email: userEmail },
     content,
     role,
   );
-
   try {
     await Chat.create({
       sessionId,
@@ -528,20 +500,17 @@ async function saveMessage({ sessionId, user, userEmail, role, content, metadata
       metadata,
       expiresAt,
     });
-  } catch (_error) {
-    // Mongo is optional during early setup, so in-memory history remains the fallback.
-  }
-
+  } catch (_error) {}
   return message;
 }
 
 async function getSessionHistory(sessionId) {
   const fallbackMessages = inMemoryHistory.get(sessionId) || [];
-
   try {
-    const dbMessages = await Chat.find({ sessionId }).sort({ createdAt: 1 }).lean();
+    const dbMessages = await Chat.find({ sessionId })
+      .sort({ createdAt: 1 })
+      .lean();
     if (!dbMessages.length) return fallbackMessages;
-
     return dbMessages.map((entry) => ({
       id: entry._id.toString(),
       role: entry.role,

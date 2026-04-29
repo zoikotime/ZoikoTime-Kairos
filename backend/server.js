@@ -1,10 +1,23 @@
-import express from "express";
-import cors from "cors";
-import chatbotRoutes from "./routes/chatbotRoutes.js";
+const dotenv = require("dotenv");
+const express = require("express");
+const cors = require("cors");
+const helmet = require("helmet");
+const { connectDB } = require("./config/db");
+const authRoutes = require("./routes/authRoutes");
+const chatRoutes = require("./routes/chatRoutes");
+const escalateRoutes = require("./routes/escalateRoutes");
+const chatbotRoutes = require("./routes/chatbotRoutes");
+const { errorHandler } = require("./middlewares/errorHandler");
+
+dotenv.config();
 
 const app = express();
-const preferredPort = Number(process.env.PORT) || 5001;
-const allowedOrigins = new Set(["http://localhost:5175"]);
+const PORT = process.env.PORT || 5000;
+
+const allowedOrigins = new Set([
+  process.env.CLIENT_URL || "http://localhost:5173",
+  "http://localhost:5175",
+]);
 
 app.use(
   cors({
@@ -13,26 +26,36 @@ app.use(
         callback(null, true);
         return;
       }
-
       callback(new Error("Origin not allowed by CORS"));
     },
-    credentials: false,
+    credentials: true,
   }),
 );
-app.use(express.json());
-app.use(chatbotRoutes);
 
-const server = app.listen(preferredPort, () => {
-  console.log(`Kairos backend listening on port ${preferredPort}`);
+app.use(helmet());
+app.use(express.json());
+
+app.get("/health", (_req, res) => {
+  res.json({ success: true, service: "zt-chatbot-server", status: "running" });
 });
 
-server.on("error", (error) => {
-  if (error.code === "EADDRINUSE") {
-    console.error(
-      `Port ${preferredPort} is already in use. Stop the other server or start this one with a different PORT.`,
-    );
-    return;
-  }
+app.use("/api/auth", authRoutes);
+app.use("/api/chat", chatRoutes);
+app.use("/api/escalate", escalateRoutes);
+app.use("/api",chatbotRoutes);
 
-  console.error("Backend server failed to start.", error);
+app.use(errorHandler);
+
+connectDB(process.env.MONGODB_URI).finally(() => {
+  const server = app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+
+  server.on("error", (error) => {
+    if (error.code === "EADDRINUSE") {
+      console.error(`Port ${PORT} is already in use.`);
+      return;
+    }
+    console.error("Server failed to start.", error);
+  });
 });
