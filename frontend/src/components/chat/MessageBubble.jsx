@@ -15,24 +15,34 @@ export default function MessageBubble({ msg, onSuggestion, theme }) {
         <div className="flex-shrink-0 mt-0.5">
           <div className="orbit-avatar-shell h-8 w-8 rounded-[13px]">
             <div className="orbit-avatar h-7 w-7 rounded-[10px] flex items-center justify-center">
-              <span className="orbit-avatar-z text-[0.72rem] font-black text-[#1d4e61]">K</span>
+              <span className="orbit-avatar-z text-[0.72rem] font-black text-[#1d4e61]">
+                K
+              </span>
             </div>
           </div>
         </div>
       )}
 
-      <div className={`flex flex-col gap-2 ${isUser ? "items-end" : "items-start"} max-w-[78%]`}>
+      <div
+        className={`flex flex-col gap-2 ${isUser ? "items-end" : "items-start"} max-w-[78%]`}
+      >
         {/* Bubble */}
         <div
           className={
             isUser
               ? "rounded-2xl rounded-tr-sm bg-gradient-to-br from-[#1ac7bf] to-[#57d995] px-4 py-2.5 text-[#042820] font-semibold text-sm shadow-lg"
               : isDark
-              ? "rounded-2xl rounded-tl-sm border border-[rgba(51,227,205,0.11)] bg-[rgba(7,26,38,0.85)] px-4 py-3 text-[#cde8f0] text-sm leading-relaxed shadow-md"
-              : "rounded-2xl rounded-tl-sm border border-[rgba(26,199,191,0.25)] bg-white px-4 py-3 text-[#103040] text-sm leading-relaxed shadow-md"
+                ? "rounded-2xl rounded-tl-sm border border-[rgba(51,227,205,0.11)] bg-[rgba(7,26,38,0.85)] px-4 py-3 text-[#cde8f0] text-sm leading-relaxed shadow-md"
+                : "rounded-2xl rounded-tl-sm border border-[rgba(26,199,191,0.25)] bg-white px-4 py-3 text-[#103040] text-sm leading-relaxed shadow-md"
           }
         >
-          {msg.typing ? <TypingDots /> : <span className="whitespace-pre-wrap">{body}</span>}
+          {msg.typing ? (
+            <TypingDots />
+          ) : typeof body === "string" ? (
+            <span className="whitespace-pre-wrap">{body}</span>
+          ) : (
+            body
+          )}
         </div>
 
         {/* Citations */}

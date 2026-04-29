@@ -13,6 +13,7 @@ import ChatHeader from "../components/layout/ChatHeader";
 import MessageBubble from "../components/chat/MessageBubble";
 import TypingDots from "../components/chat/TypingDots";
 import Composer from "../components/chat/Composer";
+import MailResponse from "../components/chat/MailResponse";
 
 const WELCOME_TEXT =
   "Hi there! I'm Kioris, your ZoikoTime assistant.\n\nI'm here to help with clock-in/out, activity, leave, pay, privacy, and anything else about ZoikoTime.\n\nWhat can I help you with today?";
@@ -75,7 +76,9 @@ export default function ChatPage() {
     fetchHistory(sessionId)
       .then((response) => {
         const historyMessages = (response.messages || []).map(normalizeMessage);
-        replaceMessages(historyMessages.length ? historyMessages : [createWelcomeMessage()]);
+        replaceMessages(
+          historyMessages.length ? historyMessages : [createWelcomeMessage()],
+        );
       })
       .catch(() => {});
   }, [replaceMessages, sessionId]);
@@ -151,6 +154,18 @@ export default function ChatPage() {
     setSessions(response.sessions || []);
   }, [setSessions, user?.email]);
 
+  const handleMailClick = useCallback(() => {
+    console.log("MAIL CLICKED");
+    replaceMessages([
+      ...messages,
+      {
+        id: `mail-${Date.now()}`,
+        role: "assistant",
+        content: <MailResponse />,
+      },
+    ]);
+  }, [messages, replaceMessages]);
+
   const handleNewChat = useCallback(async () => {
     if (!user?.email) return;
 
@@ -167,7 +182,9 @@ export default function ChatPage() {
 
       await setSessionId(nextSessionId, response.session.expiresAt || null);
       replaceMessages([
-        createWelcomeMessage("Starting a new conversation. What can I help you with?"),
+        createWelcomeMessage(
+          "Starting a new conversation. What can I help you with?",
+        ),
       ]);
       setInput("");
       setOpenPanel(null);
@@ -185,7 +202,9 @@ export default function ChatPage() {
         const response = await fetchHistory(session.sessionId);
         const historyMessages = (response.messages || []).map(normalizeMessage);
         await setSessionId(session.sessionId, session.expiresAt || null);
-        replaceMessages(historyMessages.length ? historyMessages : [createWelcomeMessage()]);
+        replaceMessages(
+          historyMessages.length ? historyMessages : [createWelcomeMessage()],
+        );
         setInput("");
         setOpenPanel(null);
       } catch {
@@ -196,7 +215,9 @@ export default function ChatPage() {
   );
 
   const clearChat = useCallback(() => {
-    replaceMessages([createWelcomeMessage("Chat cleared. What can I help you with?")]);
+    replaceMessages([
+      createWelcomeMessage("Chat cleared. What can I help you with?"),
+    ]);
   }, [replaceMessages]);
 
   return (
@@ -241,16 +262,22 @@ export default function ChatPage() {
             lang={lang}
             onLangChange={setLang}
             openPanel={openPanel}
-            onTogglePanel={(name) => setOpenPanel((current) => (current === name ? null : name))}
+            onTogglePanel={(name) =>
+              setOpenPanel((current) => (current === name ? null : name))
+            }
             onClosePanel={() => setOpenPanel(null)}
             sessions={sessions}
             onSelectSession={handleSelectSession}
             onNewChat={handleNewChat}
+            onMailClick={handleMailClick}
           />
 
           <div
             className="flex-1 overflow-y-auto px-4 py-5 sm:px-5"
-            style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(80,214,123,0.13) transparent" }}
+            style={{
+              scrollbarWidth: "thin",
+              scrollbarColor: "rgba(80,214,123,0.13) transparent",
+            }}
           >
             {messages.map((message) => (
               <MessageBubble
@@ -262,10 +289,15 @@ export default function ChatPage() {
             ))}
 
             {isTyping ? (
-              <div className="mb-4 flex items-start gap-2.5" style={{ animation: "msgIn 0.2s ease both" }}>
+              <div
+                className="mb-4 flex items-start gap-2.5"
+                style={{ animation: "msgIn 0.2s ease both" }}
+              >
                 <div className="orbit-avatar-shell mt-0.5 h-8 w-8 rounded-[13px]">
                   <div className="orbit-avatar flex h-7 w-7 items-center justify-center rounded-[10px]">
-                    <span className="orbit-avatar-z text-[0.72rem] font-black text-[#1d4e61]">K</span>
+                    <span className="orbit-avatar-z text-[0.72rem] font-black text-[#1d4e61]">
+                      K
+                    </span>
                   </div>
                 </div>
                 <div

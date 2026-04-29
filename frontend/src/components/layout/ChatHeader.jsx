@@ -28,6 +28,7 @@ export default function ChatHeader({
   sessions,
   onSelectSession,
   onNewChat,
+  onMailClick,
 }) {
   const isDark = theme === "dark";
   const panelRef = useRef(null);
@@ -191,7 +192,13 @@ export default function ChatHeader({
                 Edit
               </button>
 
-              <button className="flex items-center gap-2 w-full px-4 py-2 hover:bg-green-400/20">
+              <button
+                onClick={() => {
+                  setActionOpen(false);
+                  onMailClick(); // ✅ trigger
+                }}
+                className="flex items-center gap-2 w-full px-4 py-2 hover:bg-green-400/20"
+              >
                 <HiOutlineMail className="h-[16px] w-[16px]" />
                 Mail
               </button>
