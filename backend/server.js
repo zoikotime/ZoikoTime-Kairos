@@ -9,6 +9,9 @@ const escalateRoutes = require("./routes/escalateRoutes");
 const chatbotRoutes = require("./routes/chatbotRoutes");
 const { errorHandler } = require("./middlewares/errorHandler");
 
+// ✅ NEW IMPORT
+const mailRoutes = require("./routes/mailRoutes");
+
 dotenv.config();
 
 const app = express();
@@ -42,7 +45,10 @@ app.get("/health", (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/escalate", escalateRoutes);
-app.use("/api",chatbotRoutes);
+app.use("/api", chatbotRoutes);
+
+// ✅ NEW ROUTE ADDED (NO CHANGE TO EXISTING)
+app.use("/api/mail", mailRoutes);
 
 app.use(errorHandler);
 
