@@ -52,7 +52,7 @@ export const useStore = create((set, get) => ({
   loading: false,
   hydrated: false,
   language: "en",
-  theme: "orbit",
+  theme: "dark",
   historyOpen: false,
   setLoading: (loading) => set({ loading }),
   setAssistantContext: (assistantContext) =>
@@ -97,7 +97,7 @@ export const useStore = create((set, get) => ({
       set({
         hydrated: true,
         language,
-        theme: prefs?.theme || "orbit",
+        theme: prefs?.theme || "dark",
         onboardingDraft: loadDraft(),
         messages: createWelcomeMessage(language, get().assistantContext),
       });
@@ -109,7 +109,7 @@ export const useStore = create((set, get) => ({
       sessionId: session.sessionId,
       expiresAt: session.expiresAt || null,
       language,
-      theme: prefs?.theme || "orbit",
+      theme: prefs?.theme || "dark",
       onboardingDraft: loadDraft() || session.user,
       hydrated: true,
       messages: createWelcomeMessage(language, get().assistantContext),
@@ -134,7 +134,7 @@ export const useStore = create((set, get) => ({
     }));
   },
   toggleTheme: () => {
-    const nextTheme = get().theme === "orbit" ? "sand" : "orbit";
+    const nextTheme = get().theme === "dark" ? "light" : "dark";
     savePrefs({
       language: get().language,
       theme: nextTheme,
