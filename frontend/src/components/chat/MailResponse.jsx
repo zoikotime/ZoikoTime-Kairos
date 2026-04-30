@@ -5,8 +5,11 @@ import toast from "react-hot-toast";
 export default function MailResponse() {
   const user = useStore((state) => state.user);
   const messages = useStore((state) => state.messages);
+  const appendMessage = useStore((state) => state.appendMessage);
 
-  // ✅ Only user prompts for issue
+  const [emailSent, setEmailSent] = useState(false);
+  const [sending, setSending] = useState(false); // ✅ NEW
+
   const fallbackIssue =
     messages
       .filter((m) => m.role === "user")
@@ -16,7 +19,7 @@ export default function MailResponse() {
 
   const [subject, setSubject] = useState(fallbackIssue);
   const [body, setBody] = useState("");
-  const [toEmail, setToEmail] = useState("support@zoiko.com"); // ✅ editable "to"
+  const [toEmail, setToEmail] = useState("support@zoikotime.com");
 
   const handleSend = async () => {
     if (!user?.email) {
@@ -24,7 +27,8 @@ export default function MailResponse() {
       return;
     }
 
-    // ✅ Build chat history (last 10 messages, clean format)
+    setSending(true); // ✅ start loader
+
     const chatHistory = messages
       .slice(-10)
       .map((m) => {
@@ -35,7 +39,6 @@ export default function MailResponse() {
       .filter(Boolean)
       .join("\n\n");
 
-    // ✅ Final structured email body
     const finalBody = `
 User Name: ${user?.name}
 User Email: ${user?.email}
@@ -56,27 +59,57 @@ Chat History:
 ${chatHistory}
 `;
 
-    const res = await fetch("http://localhost:5000/api/mail/send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: user.email,
-        to: toEmail,
-        subject,
-        body: finalBody, // ✅ sending structured content
-      }),
-    });
+    try {
+      const res = await fetch("http://localhost:5000/api/mail/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: user.email,
+          to: toEmail,
+          subject,
+          body: finalBody,
+        }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (data.success) {
-      toast.success("Mail sent with chat history ✅");
-    } else {
-      toast.error("Failed  to send try again...");
+      if (data.success) {
+        toast.success("Mail sent with chat history ✅");
+        setEmailSent(true);
+      } else {
+        toast.error("Failed to send, try again...");
+      }
+    } catch (err) {
+      toast.error("Something went wrong, try again...");
+    } finally {
+      setSending(false); // ✅ stop loader always
     }
   };
+
+  if (emailSent) {
+    return (
+      <div className="space-y-2 text-sm text-center p-4 rounded-xl border border-green-300">
+        <div className="text-2xl">✅</div>
+        <div className="font-semibold text-green-600">
+          Mail Sent Successfully!
+        </div>
+        <p className="text-green-600 text-xs">
+          Our team will get back to you shortly.
+        </p>
+        <p className="text-gray-500 text-xs">
+          Have more questions? Feel free to ask below!
+        </p>
+        <button
+          onClick={() => setEmailSent(false)}
+          className="mt-2 text-xs text-blue-500 underline"
+        >
+          Send another mail
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2 text-sm">
@@ -97,13 +130,13 @@ ${chatHistory}
         placeholder="from"
       />
 
-      {/* To (editable now) */}
+      {/* To */}
       <input
         value={toEmail}
-        onChange={(e) => setToEmail(e.target.value)}
         className="w-full border p-2 rounded"
         placeholder="to"
-        required
+        disabled
+        hidden
       />
 
       {/* Subject */}
@@ -123,12 +156,44 @@ ${chatHistory}
         className="w-full border p-2 rounded h-20"
       />
 
-      {/* Send */}
+      {/* ✅ Send Button with Loader */}
       <button
         onClick={handleSend}
-        className="bg-green-500 text-white px-3 py-1 rounded"
+        disabled={sending}
+        className={`flex items-center gap-2 px-3 py-1 rounded text-white text-sm font-medium transition-all ${
+          sending
+            ? "bg-green-400 cursor-not-allowed"
+            : "bg-green-500 hover:bg-green-600"
+        }`}
       >
-        Send
+        {sending ? (
+          <>
+            {/* ✅ Spinner */}
+            <svg
+              className="animate-spin h-4 w-4 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v8z"
+              />
+            </svg>
+            Sending...
+          </>
+        ) : (
+          "Send"
+        )}
       </button>
     </div>
   );

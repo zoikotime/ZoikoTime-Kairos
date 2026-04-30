@@ -1,40 +1,33 @@
-const sgMail = require("@sendgrid/mail");
+const { sendMail } = require("../services/mailService");
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-const sendMail = async (req, res) => {
+const sendMailHandler = async (req, res) => {
   try {
     const { from, to, subject, body } = req.body;
 
     if (!from || !to || !subject) {
       return res.status(400).json({
         success: false,
-        message: "Missing required fields",
+        message: "Missing required fields: from, to, subject",
       });
     }
 
-    const msg = {
-      to,
-      from: process.env.FROM_EMAIL, // ✅ MUST be verified in SendGrid
-      replyTo: from, // ✅ user's email
-      subject,
-      text: body || "No message provided",
-    };
-
-    await sgMail.send(msg);
+    await sendMail({ to, from, subject, body });
 
     res.json({
       success: true,
       message: "Email sent successfully",
     });
   } catch (error) {
-    console.error("Mail Error:", error.response?.body || error.message);
+    console.error("Mail Error:", error.message);
 
     res.status(500).json({
       success: false,
-      message: "Failed to send email",
+      message: error.message || "Failed to send email",
+      ...(process.env.NODE_ENV === "development" && {
+        error: error.message,
+      }),
     });
   }
 };
 
-module.exports = { sendMail };
+module.exports = { sendMailHandler };

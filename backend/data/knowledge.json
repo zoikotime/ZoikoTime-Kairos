@@ -1,11 +1,11 @@
 {
   "_meta": {
-    "version": "2.0.0",
+    "version": "3.0.0",
     "assistantName": "Koiris",
     "product": "ZoikoTime Desktop Application",
-    "spec_ref": "Kairos Production Specification v2.1",
+    "spec_ref": "Kairos Production Specification v3.0 — Master Response Pack",
     "owner": "Zoiko Tech Inc",
-    "last_reviewed": "2026-04-28",
+    "last_reviewed": "2026-04-30",
     "description": "Source-grounded, permission-aware intent-response knowledge base for Kairos. No URLs appear in responses except the ZoikoTime contact page which is pinned only in agent escalation and help intents. search_redirects map keywords to in-app navigation routes for the frontend router.",
     "platform": "ZoikoTime Desktop Application (Electron / MERN)",
     "support_contact": {
@@ -40,7 +40,8 @@
       "I4": "Human escalation must always be visible — never blocked or hidden.",
       "I5": "Kairos must never fabricate features, certifications, pricing or roadmap items.",
       "I6": "Responses must respect the user's role, workspace and data permission boundary.",
-      "I7": "All interactions must be logged with sources and context for audit."
+      "I7": "All interactions must be logged with sources and context for audit.",
+      "I8": "Kairos must reinforce that employees can always see what is recorded about them and use correction/dispute routes."
     }
   },
 
@@ -56,7 +57,12 @@
       "contact my manager",
       "send to manager",
       "notify my manager",
-      "escalate to manager"
+      "escalate to manager",
+      "message my manager",
+      "tell my manager",
+      "send message to manager",
+      "forward to manager",
+      "manager email"
     ],
     "response": "I'll prepare an email to your manager on your behalf.\n\nYour manager's email has been loaded from your account profile. Here's a draft:\n\n---\nSubject: Support Request via Kairos — ZoikoTime\n\nHi [Manager Name],\n\nI'm reaching out regarding an issue I was unable to resolve through the Kairos assistant on the ZoikoTime desktop app.\n\nEmployee: [Your Name]\nEmail: [Your Work Email]\nIssue Summary: [Auto-filled from your last conversation with Kairos]\n\nCould you please assist or escalate this further if needed?\n\nThank you.\n---\n\nShall I send this now? Reply \"Yes, send it\" or \"Let me edit it first\".",
     "note": "Manager email is always pre-loaded from the onboarding registration form. Never ask the employee to enter it manually mid-chat."
@@ -77,7 +83,7 @@
   "search_redirects": [
     {
       "id": "today-dashboard",
-      "keywords": ["today", "dashboard", "home screen", "main screen", "overview"],
+      "keywords": ["today", "dashboard", "home screen", "main screen", "overview", "live timer", "home", "main page", "start screen"],
       "prompt": "Today — Your live work dashboard",
       "actionLabel": "Go to Today",
       "intentId": "today_dashboard",
@@ -85,7 +91,7 @@
     },
     {
       "id": "activity-log",
-      "keywords": ["activity", "activity log", "app usage", "what i was doing"],
+      "keywords": ["activity", "activity log", "app usage", "what i was doing", "daily activity", "app tracking", "work activity"],
       "prompt": "Activity Log — Your daily app and work activity",
       "actionLabel": "Go to Activity Log",
       "intentId": "activity_log",
@@ -93,7 +99,7 @@
     },
     {
       "id": "screenshots",
-      "keywords": ["screenshots", "screenshot", "screen capture", "my screenshots"],
+      "keywords": ["screenshots", "screenshot", "screen capture", "my screenshots", "screen recording", "captured screens"],
       "prompt": "Screenshots — View your captured screenshots",
       "actionLabel": "Go to Screenshots",
       "intentId": "screenshots",
@@ -101,7 +107,7 @@
     },
     {
       "id": "timeline",
-      "keywords": ["timeline", "my timeline", "work timeline", "daily timeline"],
+      "keywords": ["timeline", "my timeline", "work timeline", "daily timeline", "workday view", "activity timeline"],
       "prompt": "Timeline — Your chronological workday view",
       "actionLabel": "Go to Timeline",
       "intentId": "timeline",
@@ -109,7 +115,7 @@
     },
     {
       "id": "my-timesheet",
-      "keywords": ["timesheet", "my timesheet", "hours worked", "time records", "weekly hours"],
+      "keywords": ["timesheet", "my timesheet", "hours worked", "time records", "weekly hours", "daily hours", "monthly hours", "corrections", "missed clock-in", "missed clock out", "time correction"],
       "prompt": "My Timesheet — View and correct your time records",
       "actionLabel": "Go to My Timesheet",
       "intentId": "my_timesheet",
@@ -117,7 +123,7 @@
     },
     {
       "id": "leave-requests",
-      "keywords": ["leave", "apply leave", "leave request", "time off", "days off", "casual leave", "annual leave"],
+      "keywords": ["leave", "apply leave", "leave request", "time off", "days off", "casual leave", "annual leave", "sick leave", "leave application", "leave balance", "leave history", "leave types"],
       "prompt": "Leave & Requests — Apply and manage your time off",
       "actionLabel": "Go to Leave & Requests",
       "intentId": "leave_requests",
@@ -125,7 +131,7 @@
     },
     {
       "id": "holidays",
-      "keywords": ["holidays", "public holidays", "bank holidays", "holiday list"],
+      "keywords": ["holidays", "public holidays", "bank holidays", "holiday list", "national holidays", "upcoming holidays"],
       "prompt": "Holidays — View your organisation's holiday calendar",
       "actionLabel": "Go to Holidays",
       "intentId": "holidays",
@@ -133,7 +139,7 @@
     },
     {
       "id": "payslips",
-      "keywords": ["payslips", "payslip", "salary slip", "pay statement"],
+      "keywords": ["payslips", "payslip", "salary slip", "pay statement", "pay stub", "monthly payslip", "download payslip"],
       "prompt": "Payslips — Download and view your pay records",
       "actionLabel": "Go to Payslips",
       "intentId": "payslips",
@@ -141,7 +147,7 @@
     },
     {
       "id": "earnings-estimate",
-      "keywords": ["earnings estimate", "estimated earnings", "salary estimate", "pay estimate"],
+      "keywords": ["earnings estimate", "estimated earnings", "salary estimate", "pay estimate", "projected pay", "how much will i earn", "wage estimate"],
       "prompt": "Earnings Estimate — See your projected pay for this period",
       "actionLabel": "Go to Earnings Estimate",
       "intentId": "earnings_estimate",
@@ -149,7 +155,7 @@
     },
     {
       "id": "daily-summary",
-      "keywords": ["daily summary", "today's summary", "work summary", "insights"],
+      "keywords": ["daily summary", "today's summary", "work summary", "insights", "summary of my day", "how did i do today"],
       "prompt": "Daily Summary — Your full day breakdown and insights",
       "actionLabel": "Go to Daily Summary",
       "intentId": "daily_summary",
@@ -157,7 +163,7 @@
     },
     {
       "id": "whats-recorded",
-      "keywords": ["what is recorded", "my data", "what's recorded", "recorded sessions", "work sessions"],
+      "keywords": ["what is recorded", "my data", "what's recorded", "recorded sessions", "work sessions", "what gets recorded", "what is monitored", "what does the app track"],
       "prompt": "What's Recorded — View all your tracked sessions",
       "actionLabel": "Go to What's Recorded",
       "intentId": "whats_recorded",
@@ -165,7 +171,7 @@
     },
     {
       "id": "access-history",
-      "keywords": ["access history", "who viewed my data", "data access", "who accessed my data"],
+      "keywords": ["access history", "who viewed my data", "data access", "who accessed my data", "data access log", "who has seen my records"],
       "prompt": "Access History — See who has accessed your records",
       "actionLabel": "Go to Access History",
       "intentId": "access_history",
@@ -173,7 +179,7 @@
     },
     {
       "id": "privacy-settings",
-      "keywords": ["privacy settings", "privacy", "data settings", "my privacy"],
+      "keywords": ["privacy settings", "privacy", "data settings", "my privacy", "data export", "delete my data", "manage my data", "data preferences"],
       "prompt": "Privacy Settings — Manage your personal data preferences",
       "actionLabel": "Go to Privacy Settings",
       "intentId": "privacy_settings",
@@ -181,7 +187,7 @@
     },
     {
       "id": "zoiko-connect",
-      "keywords": ["zoiko connect", "connect", "messages", "channels", "team chat", "direct messages", "meetings"],
+      "keywords": ["zoiko connect", "zoiko sema", "connect", "sema", "messages", "channels", "team chat", "direct messages", "meetings", "calls", "team channels", "messaging"],
       "prompt": "Zoiko Connect — Messaging, channels and meetings",
       "actionLabel": "Open Zoiko Connect",
       "intentId": "zoiko_connect",
@@ -189,7 +195,7 @@
     },
     {
       "id": "profile",
-      "keywords": ["profile", "my profile", "edit profile", "account profile"],
+      "keywords": ["profile", "my profile", "edit profile", "account profile", "update profile", "change my name"],
       "prompt": "Profile — View and edit your account details",
       "actionLabel": "Go to Profile",
       "intentId": "profile_settings",
@@ -197,7 +203,7 @@
     },
     {
       "id": "notifications",
-      "keywords": ["notifications", "notification settings", "alerts", "turn off notifications"],
+      "keywords": ["notifications", "notification settings", "alerts", "turn off notifications", "manage notifications"],
       "prompt": "Notifications — Manage your alert preferences",
       "actionLabel": "Go to Notifications",
       "intentId": "notifications",
@@ -205,7 +211,7 @@
     },
     {
       "id": "settings",
-      "keywords": ["settings", "app settings", "preferences", "configuration"],
+      "keywords": ["settings", "app settings", "preferences", "configuration", "theme", "language", "dark mode", "light mode"],
       "prompt": "Settings — App preferences and configuration",
       "actionLabel": "Go to Settings",
       "intentId": "settings",
@@ -213,7 +219,7 @@
     },
     {
       "id": "my-schedule",
-      "keywords": ["my schedule", "schedule", "shift schedule", "work schedule"],
+      "keywords": ["my schedule", "schedule", "shift schedule", "work schedule", "when do i work", "shifts", "upcoming shifts"],
       "prompt": "My Schedule — View your assigned work schedule",
       "actionLabel": "Go to My Schedule",
       "intentId": "my_schedule",
@@ -221,7 +227,7 @@
     },
     {
       "id": "contact-support",
-      "keywords": ["contact", "support", "help", "speak to agent", "human", "agent", "contact us"],
+      "keywords": ["contact", "support", "help", "speak to agent", "human", "agent", "contact us", "live support", "call zoikotime", "real person"],
       "prompt": "Contact ZoikoTime Support",
       "actionLabel": "Contact Support",
       "intentId": "agent_escalation",
@@ -229,16 +235,30 @@
     }
   ],
 
+  "priority_matching_rules": [
+    { "priority": 1, "intent_group": "covert_monitoring_refusal", "rule": "Any request to hide tracking, monitor secretly, stealth install or bypass employee visibility must override all other matches." },
+    { "priority": 2, "intent_group": "legal_advice_refusal / hr_discipline_refusal", "rule": "Legal or disciplinary queries must never be answered as advice even if ZoikoTime evidence is mentioned." },
+    { "priority": 3, "intent_group": "agent_escalation / email_manager", "rule": "Human escalation and manager email requests must be honoured immediately." },
+    { "priority": 4, "intent_group": "technical_issues", "rule": "Login, app not tracking, permissions and crash issues should route to troubleshooting, then support." },
+    { "priority": 5, "intent_group": "data_privacy", "rule": "Privacy, access, screenshots and recorded data should route to transparency responses." },
+    { "priority": 6, "intent_group": "functional_navigation", "rule": "Clock-in, timesheet, leave, pay and settings routes should return direct guidance plus route action." },
+    { "priority": 7, "intent_group": "fallback", "rule": "If confidence is low, do not guess. Ask a clarifying question or escalate." }
+  ],
+
   "intents": [
 
     {
       "id": "welcome",
+      "safety_priority": false,
       "keywords": [
         "hi", "hello", "hey", "start", "home", "menu", "main menu",
         "hiya", "good morning", "good afternoon", "good evening",
-        "howdy", "what can you do", "help me", "get started"
+        "howdy", "what can you do", "help me", "get started",
+        "wake up", "yo", "sup", "greetings", "hi there",
+        "good day", "morning", "afternoon", "evening", "hey there",
+        "hello kairos", "hi kairos", "open", "launch", "begin"
       ],
-      "response": "Hi there! 👋 I'm Kairos, your ZoikoTime assistant.\n\nI'm here to help you understand the app, your work data, leave, pay, privacy settings and anything else about ZoikoTime.\n\nWhat can I help you with today?",
+      "response": "Hi there! 👋 I'm Kairos, your ZoikoTime assistant.\n\nI'm here to help you understand the app, your work data, leave, pay, privacy settings, Zoiko Connect, account settings and technical issues.\n\nWhat can I help you with today?",
       "suggestions": [
         "1️⃣ Clock-in / Clock-out help",
         "2️⃣ Activity, Screenshots & Reports",
@@ -254,10 +274,14 @@
 
     {
       "id": "what_is_zoikotime",
+      "safety_priority": false,
       "keywords": [
         "what is zoikotime", "what does zoikotime do", "tell me about zoikotime",
         "zoikotime overview", "about zoikotime", "what is this app",
-        "what is this platform", "how does zoikotime work", "explain zoikotime"
+        "what is this platform", "how does zoikotime work", "explain zoikotime",
+        "what does this app do", "what is this software", "what does this do",
+        "zoikotime features", "overview of zoikotime", "describe zoikotime",
+        "what's the purpose of this app", "why do we use zoikotime"
       ],
       "response": "ZoikoTime is an AI-powered workforce intelligence platform — not a surveillance tool.\n\nIt helps organisations understand:\n\n✅ Meaningful work time — how time, tools and outcomes align\n✅ Work authenticity — confidence scores for each work session\n✅ Productivity intelligence — activity, focus and workload signals\n✅ Policy compliance — governed, transparent and role-based\n✅ Audit-ready records — exportable logs and evidence packs\n\nAs an employee, ZoikoTime gives you full visibility into what is recorded about you and why — with correction and dispute routes always available.",
       "suggestions": [
@@ -270,11 +294,15 @@
 
     {
       "id": "today_dashboard",
+      "safety_priority": false,
       "keywords": [
         "today", "dashboard", "home screen", "main screen", "today screen",
-        "live dashboard", "overview", "what do i see on today"
+        "live dashboard", "overview", "what do i see on today",
+        "what is the today screen", "what's on the dashboard",
+        "home page", "main page", "open dashboard", "go to today",
+        "what does the home screen show", "today view", "work overview"
       ],
-      "response": "🏠 Today — Your Live Dashboard\n\nThe Today screen is your main home view. Here's what you'll see:\n\nTop section:\n- ⏱️ Live Work Timer — counts up from your clock-in time\n- 🟡 Take a Break button\n- 🔴 Clock Out button\n\nStats cards:\n- Total Worked Hours\n- Active Time\n- Idle Time %\n- Productive Apps %\n\nClock-in and Clock-out times — your session start and end\n\nWork Authenticity — your session confidence score with Verified or Flagged status\n\nActivities chart — bar chart of your activity across the day\n\nTop Apps Today — apps you used most\n\nToday's Summary — final totals for Work Hours, Active Time, Break Time, Productive % and Status",
+      "response": "🏠 Today — Your Live Dashboard\n\nThe Today screen is your main home view. Here's what you'll see:\n\nTop section:\n- ⏱️ Live Work Timer — counts up from your clock-in time\n- 🟡 Take a Break button\n- 🔴 Clock Out button\n\nStats cards:\n- Total Worked Hours\n- Active Time\n- Idle Time %\n- Productive Apps %\n\nClock-in and Clock-out times — your session start and end\n\nWork Authenticity — your session confidence score with Verified or Flagged status\n\nActivities chart — bar chart of your activity across the day\n\nTop Apps Today — apps you used most\n\nToday's Summary — final totals for Work Hours, Active Time, Break Time, Productive % and Status\n\nUse this screen first when you want to confirm whether your current session is active.",
       "route": "/today",
       "suggestions": [
         "What is the Live Work Timer?",
@@ -286,12 +314,17 @@
 
     {
       "id": "clockin_clockout",
+      "safety_priority": false,
       "keywords": [
         "clock in", "clock out", "clock-in", "clock-out", "clockin", "clockout",
         "how do i clock in", "how to clock in", "start work", "end work",
         "start tracking", "stop tracking", "begin session", "end session",
         "track my time", "time tracking", "how to track time",
-        "i forgot to clock in", "missed clock in", "forgot to clock out"
+        "i forgot to clock in", "missed clock in", "forgot to clock out",
+        "didn't clock in", "didn't clock out", "how do i start my day",
+        "how do i end my day", "punch in", "punch out", "record my time",
+        "start my shift", "end my shift", "begin work", "finish work",
+        "clocking in", "clocking out", "clock me in", "clock me out"
       ],
       "response": "🕐 Clock-In & Clock-Out\n\nThe ZoikoTime desktop app tracks your session automatically once you're logged in and the tracker is active.\n\nHow it works:\n- Your Clock-In time is shown at the top of the Today screen\n- A Live Work Timer counts up in real time while your session is active\n- Use Take a Break to pause the timer\n- Use Clock Out when you're done for the day\n\nMissed a clock-in or clock-out?\nGo to Time & Attendance → My Timesheet, select the date and submit a correction request.\n\nImportant: Your organisation's policy controls whether corrections require manager approval.",
       "route": "/timesheet",
@@ -305,10 +338,13 @@
 
     {
       "id": "live_work_timer",
+      "safety_priority": false,
       "keywords": [
         "live work timer", "work timer", "timer", "live timer",
         "what is the timer", "how does the timer work", "session timer",
-        "running timer", "work session timer"
+        "running timer", "work session timer", "timer not working",
+        "where is the timer", "timer is wrong", "timer says wrong time",
+        "how long have i been working", "how long is my session"
       ],
       "response": "⏱️ Live Work Timer\n\nThe Live Work Timer shows how long your current work session has been running — it starts from the moment you clock in.\n\nYou can see it:\n- In the Today screen at the top as a large running display\n- As a small floating badge in the bottom-right corner of the app\n\nButtons alongside the timer:\n- 🟡 Take a Break — pauses the timer and records break time separately\n- 🔴 Clock Out — ends the session and saves your total hours",
       "route": "/today",
@@ -322,12 +358,16 @@
 
     {
       "id": "take_a_break",
+      "safety_priority": false,
       "keywords": [
         "take a break", "break", "pause timer", "how do i take a break",
         "break time", "record break", "lunch break", "short break",
-        "how to pause", "pause session"
+        "how to pause", "pause session", "resume work", "back from break",
+        "i need a break", "going on break", "returning from break",
+        "break button", "pausing my timer", "stop for lunch",
+        "coffee break", "rest break", "how do i resume", "resume session"
       ],
-      "response": "☕ Taking a Break\n\nTo take a break:\n1. Click the Take a Break button on your Today screen\n2. The timer pauses and break time starts counting separately\n3. When you're back, click Resume Work\n\nWhat gets recorded:\n- Break start and end time\n- Total break duration shown as Break Time on your dashboard\n- Break time is tracked separately from Active Time\n\nYour manager can see your break duration. Break times are part of your transparent daily record.",
+      "response": "☕ Taking a Break\n\nTo take a break:\n1. Click the Take a Break button on your Today screen\n2. The timer pauses and break time starts counting separately\n3. When you're back, click Resume Work\n\nWhat gets recorded:\n- Break start and end time\n- Total break duration shown as Break Time on your dashboard\n- Break time is tracked separately from Active Time\n\nYour manager may see your break duration depending on your organisation's permissions and policy.",
       "route": "/today",
       "suggestions": [
         "What is Idle Time?",
@@ -339,10 +379,13 @@
 
     {
       "id": "active_time_vs_work_hours",
+      "safety_priority": false,
       "keywords": [
         "active time", "work hours", "difference between active time and work hours",
         "total worked hours", "what is active time", "what are work hours",
-        "active vs work", "productive time", "time difference"
+        "active vs work", "productive time", "time difference",
+        "how is active time calculated", "why is active time less than work hours",
+        "worked hours vs active hours", "what counts as active", "active hours"
       ],
       "response": "📊 Active Time vs Total Work Hours\n\nTotal Work Hours — Total time from clock-in to clock-out including breaks\nActive Time — Time you were actively using your device: keyboard, mouse, apps\nBreak Time — Time you were officially on a recorded break\nIdle Time % — Percentage of work time where no activity was detected\nProductive Apps % — Percentage of time spent in work-classified applications\n\nExample: If you worked 1h 17m and Active Time is also 1h 17m, your Idle Time is 0% — meaning you were active throughout your entire session.",
       "route": "/today",
@@ -356,10 +399,15 @@
 
     {
       "id": "idle_time",
+      "safety_priority": false,
       "keywords": [
         "idle time", "why am i idle", "idle", "what is idle time",
         "marked as idle", "showing idle", "idle percentage",
-        "i was working but it shows idle", "idle detection"
+        "i was working but it shows idle", "idle detection",
+        "why does it say idle", "idle during meeting", "on a call but idle",
+        "reading document but shows idle", "phone call idle",
+        "video call showing idle", "screen locked idle",
+        "idle when i was working", "incorrect idle"
       ],
       "response": "💤 Idle Time — What It Means\n\nIdle Time is recorded when no keyboard, mouse or application activity is detected for a set period.\n\nCommon reasons you may see Idle Time:\n- You stepped away from your desk without taking a formal break\n- You were on a phone or video call without touching the screen\n- Your screen locked or the device went to sleep\n- You were reading a document without scrolling or clicking\n\nWhat to do:\nIf the idle time was legitimate work such as a meeting or a call, you can submit a Time Correction via My Timesheet.\n\nImportant: Idle time is not automatically treated as non-work. It is a signal reviewed in context by your manager according to your organisation's policy.",
       "route": "/timesheet",
@@ -373,13 +421,17 @@
 
     {
       "id": "work_authenticity",
+      "safety_priority": false,
       "keywords": [
         "work authenticity", "authenticity score", "confidence score",
         "proof of work", "what is work authenticity", "how is authenticity calculated",
         "validated", "flagged", "session flagged", "why is my session flagged",
-        "session score", "work confidence", "low score", "95% confidence"
+        "session score", "work confidence", "low score", "95% confidence",
+        "what does validated mean", "what does flagged mean",
+        "authenticity check", "session integrity", "proof of work score",
+        "session status", "my session shows warning"
       ],
-      "response": "🛡️ Work Authenticity — Proof-of-Work Confidence\n\nEvery work session receives a Work Authenticity Score from 0 to 100%.\n\nHow it's calculated:\n- 📸 Screenshot integrity\n- ⌨️ Keyboard and mouse activity patterns\n- 🖥️ Device verification signals\n- 🔍 Tamper detection checks\n\nWhat the statuses mean:\n✅ Validated — Session passed all checks with high confidence\n⚠️ Warning — Minor signals detected, reviewed in context\n🚨 Flagged — Session failed one or more integrity checks\n⏳ Pending — Session is still being processed\n\nA flagged session does not mean punishment. It means the system flagged something for human review. All decisions are made by authorised people — not an automated system.\n\nView all your sessions under My Data → What's Recorded.",
+      "response": "🛡️ Work Authenticity — Proof-of-Work Confidence\n\nEvery work session receives a Work Authenticity Score from 0 to 100%.\n\nHow it's calculated:\n- 📸 Screenshot integrity (if screenshots are enabled)\n- ⌨️ Keyboard and mouse activity patterns\n- 🖥️ Device verification signals\n- 🔍 Tamper detection checks\n\nWhat the statuses mean:\n✅ Validated — Session passed all checks with high confidence\n⚠️ Warning — Minor signals detected, reviewed in context\n🚨 Flagged — Session failed one or more integrity checks\n⏳ Pending — Session is still being processed\n\nA flagged session does not mean punishment. It means the system flagged something for human review. All decisions are made by authorised people — not an automated system.\n\nView all your sessions under My Data → What's Recorded.",
       "route": "/whats-recorded",
       "suggestions": [
         "Why was my session flagged?",
@@ -391,11 +443,15 @@
 
     {
       "id": "session_flagged",
+      "safety_priority": false,
       "keywords": [
         "why was my session flagged", "session flagged", "flagged session",
-        "my session is flagged", "what does flagged mean", "flagged work session"
+        "my session is flagged", "what does flagged mean", "flagged work session",
+        "session got flagged", "why is it flagged", "red flag on session",
+        "my work was flagged", "flagged by the system", "session marked flagged",
+        "why do i have a flag"
       ],
-      "response": "🚨 Why Was My Session Flagged?\n\nA flagged session does not automatically mean wrongdoing. Common reasons:\n\n- Very low keyboard or mouse activity during a long session\n- Screenshot data was missing or incomplete\n- Unusual activity pattern compared to your baseline\n- Device verification signal was not received\n\nWhat happens next:\n1. A human reviewer — your manager or HR — reviews the session\n2. No automated disciplinary action is taken\n3. You will be informed if action is required by your organisation\n\nYou can dispute it:\nGo to My Data → What's Recorded → select the session → Raise a Dispute\n\nKairos cannot change session scores or remove flags — that requires human review.",
+      "response": "🚨 Why Was My Session Flagged?\n\nA flagged session does not automatically mean wrongdoing. Common reasons:\n\n- Very low keyboard or mouse activity during a long session\n- Screenshot data was missing or incomplete (if screenshots are enabled)\n- Unusual activity pattern compared to your baseline\n- Device verification signal was not received\n\nWhat happens next:\n1. A human reviewer — your manager or HR — reviews the session\n2. No automated disciplinary action is taken by Kairos\n3. You will be informed if action is required by your organisation\n\nYou can dispute it:\nGo to My Data → What's Recorded → select the session → Raise a Dispute\n\nKairos cannot change session scores or remove flags — that requires human review.",
       "route": "/whats-recorded",
       "suggestions": [
         "How do I raise a dispute?",
@@ -407,11 +463,16 @@
 
     {
       "id": "raise_dispute",
+      "safety_priority": false,
       "keywords": [
         "raise a dispute", "dispute", "correct my record", "contest my session",
         "challenge my score", "i disagree with my record", "appeal",
         "how do i dispute", "submit a dispute", "correction request",
-        "how do i correct my time", "correct time", "time correction"
+        "how do i correct my time", "correct time", "time correction",
+        "i want to dispute", "wrong session data", "incorrect record",
+        "my record is wrong", "fix my time", "wrong hours", "change my record",
+        "submit correction", "request correction", "wrong clock in time",
+        "wrong clock out time", "incorrect hours"
       ],
       "response": "📝 Raising a Dispute or Correction Request\n\nFor session disputes:\n1. Go to My Data → What's Recorded\n2. Find the session in question\n3. Click Raise a Dispute\n4. Describe the issue and submit\n\nFor time corrections (missed clock-in or clock-out):\n1. Go to Time & Attendance → My Timesheet\n2. Select the date\n3. Click Request Correction, enter your reason and submit\n\nWhat happens after:\n- Your manager or HR is notified\n- They review and approve or decline your request\n- You receive a notification on the outcome\n\nKairos cannot approve or modify your records. All correction decisions are made by authorised humans in your organisation.",
       "route": "/whats-recorded",
@@ -425,10 +486,14 @@
 
     {
       "id": "activity_log",
+      "safety_priority": false,
       "keywords": [
         "activity log", "my activity", "what is activity log", "view activity",
         "activity history", "daily activity", "how do i see my activity",
-        "work activity", "activity tracking"
+        "work activity", "activity tracking", "what apps did i use",
+        "see my app usage", "app history", "what did i do today",
+        "show me my activity", "app activity", "track activity",
+        "view app usage", "daily app usage"
       ],
       "response": "📋 Activity Log\n\nFound under Work & Activity → Activity Log in the left sidebar.\n\nWhat it shows:\n- A timeline of your app and window usage throughout the day\n- Time spent in each application\n- Apps categorised as Productive, Neutral or Restricted based on your org's policy\n- Activity bar chart showing your active periods across the day\n- Which apps you used and for how long\n- When you were active vs idle\n- Your Top Apps for the day\n\nYou can only see your own activity log. Your manager may see an aggregated summary depending on their permission level.",
       "route": "/activity-log",
@@ -441,11 +506,16 @@
 
     {
       "id": "screenshots",
+      "safety_priority": false,
       "keywords": [
         "screenshots", "screenshot", "are screenshots taken", "screen capture",
         "what screenshots are taken", "how often are screenshots taken",
         "can i see my screenshots", "screenshot frequency",
-        "is my screen recorded", "how screenshots work"
+        "is my screen recorded", "how screenshots work",
+        "does it take screenshots", "who can see my screenshots",
+        "screen snaps", "are photos taken of my screen",
+        "view my screenshots", "screenshot policy", "screenshot enabled",
+        "do you take screenshots", "screenshot privacy"
       ],
       "response": "📸 Screenshots — What You Need to Know\n\nAre screenshots taken?\nScreenshots are only taken if your organisation has enabled this feature. Not all workspaces use screenshots.\n\nIf screenshots are enabled:\n- They are taken at intervals set by your organisation's policy\n- Only authorised roles such as manager, HR and admin can review them\n- You can view your own screenshots under Work & Activity → Screenshots\n- Sensitive content masking rules may apply based on your policy\n\nPrivacy controls:\n- You can see your own screenshots at any time — there is no hidden capture without your knowledge\n- Screenshots during break time may be excluded depending on your org's policy\n\nIf you believe a screenshot was taken unfairly, raise a dispute under My Data → What's Recorded.",
       "route": "/screenshots",
@@ -458,12 +528,35 @@
     },
 
     {
+      "id": "sensitive_content",
+      "safety_priority": false,
+      "keywords": [
+        "bank details screenshot", "private information screenshot", "sensitive screenshot",
+        "personal data captured", "private data in screenshot", "sensitive content captured",
+        "confidential info screenshot", "banking info screenshot",
+        "my password was captured", "personal photo captured",
+        "private document screenshot", "screenshot contains private info"
+      ],
+      "response": "🛡️ Sensitive Content in Screenshots\n\nIf screenshots are enabled and you believe sensitive personal information was captured, go to My Data → What's Recorded, select the session and raise a dispute.\n\nYour organisation's masking and review rules may apply. Kairos cannot delete screenshots directly, but it can guide you to the dispute route or help prepare a manager escalation.",
+      "route": "/whats-recorded",
+      "suggestions": [
+        "How do I raise a dispute?",
+        "Email my manager",
+        "Back to Main Menu"
+      ]
+    },
+
+    {
       "id": "whats_recorded",
+      "safety_priority": false,
       "keywords": [
         "what is recorded", "what gets recorded", "what does zoikotime record",
         "what data is collected", "what can my manager see", "what is monitored",
         "what does the app track", "what is tracked", "employee data",
-        "my data", "what information is stored", "what can zoikotime see"
+        "my data", "what information is stored", "what can zoikotime see",
+        "data collection", "what is being collected", "what is being stored",
+        "what does zoikotime know about me", "what info does it track",
+        "is everything monitored", "is my computer monitored"
       ],
       "response": "🔒 What ZoikoTime Records About You\n\nZoikoTime is built on a transparency-first principle — you always know what is recorded.\n\nWhat may be recorded depending on your org's policy:\n\n⏱️ Work Time — Clock-in, clock-out, active time, break time, idle time\n📱 App Activity — Apps used and time spent, Productive, Neutral or Restricted\n📸 Screenshots — Periodic screenshots only if your org has enabled this\n🖥️ Device Signals — Device type, session continuity, verification checks\n🔐 Access History — Who accessed your data, when and why\n\nWhat is NOT recorded:\n- Personal apps or websites excluded by policy\n- Content you type — keylogging is not used\n- Audio or video of you personally\n- Any data outside your defined work sessions\n\nYour rights:\n- View your own data: My Data → What's Recorded\n- See who accessed your data: My Data → Access History\n- Manage preferences: My Data → Privacy Settings\n- Raise corrections or disputes at any time",
       "route": "/whats-recorded",
@@ -476,10 +569,32 @@
     },
 
     {
+      "id": "not_recorded",
+      "safety_priority": false,
+      "keywords": [
+        "keylogger", "keystrokes", "does it record audio", "camera", "video recording",
+        "microphone", "does it record my typing", "does it track what i type",
+        "recording my voice", "webcam monitoring", "does it use my mic",
+        "can it hear me", "can it see me", "is my camera on", "audio recording",
+        "does it record conversations", "is my microphone active", "screen reading"
+      ],
+      "response": "🔐 What ZoikoTime Does NOT Record\n\nZoikoTime does not use keylogging and does not record the content you type. It does not record personal audio or video of you.\n\nScreenshots may only be taken if enabled by your organisation and are shown transparently within the app — you can always view your own screenshots.\n\nZoikoTime tracks app activity (which apps are open and for how long) — not what you write, say or see in those apps.",
+      "route": "/whats-recorded",
+      "suggestions": [
+        "What gets recorded about me?",
+        "What screenshots are taken?",
+        "Back to Main Menu"
+      ]
+    },
+
+    {
       "id": "access_history",
+      "safety_priority": false,
       "keywords": [
         "access history", "who accessed my data", "who viewed my data",
-        "data access log", "my access history", "who has seen my records"
+        "data access log", "my access history", "who has seen my records",
+        "who looked at my data", "data access trail", "audit log",
+        "has anyone viewed my records", "who can access my data"
       ],
       "response": "🔍 Access History\n\nFound under My Data → Access History in the left sidebar.\n\nWhat it shows:\n- Every time an authorised person such as manager, HR or admin viewed or exported your data\n- Timestamp of each access\n- Reason logged for the access\n\nZoikoTime maintains immutable access logs — they cannot be deleted or altered. This protects you as an employee and ensures full accountability from anyone who views your records.\n\nIf you see an access you don't recognise or understand, raise a query with your manager or HR team.",
       "route": "/access-history",
@@ -492,10 +607,31 @@
     },
 
     {
+      "id": "manager_visibility",
+      "safety_priority": false,
+      "keywords": [
+        "what can my manager see", "can my manager see everything", "who can see my data",
+        "manager access", "what does my manager see", "can manager see my apps",
+        "can my boss see my activity", "manager view", "what manager sees",
+        "supervisor access", "who sees my work data", "can hr see my data"
+      ],
+      "response": "👥 Manager Visibility\n\nYour manager may see work records based on your organisation's permissions. This may include:\n\n- Worked hours and clock-in/out times\n- Active time, break time and idle time\n- App categories (Productive, Neutral or Restricted)\n- Work Authenticity status\n- Screenshots (if enabled by your organisation)\n\nYou can review your own records under My Data → What's Recorded and review exactly who accessed your data under My Data → Access History.",
+      "route": "/whats-recorded",
+      "suggestions": [
+        "What's recorded about me?",
+        "Access History",
+        "Back to Main Menu"
+      ]
+    },
+
+    {
       "id": "privacy_settings",
+      "safety_priority": false,
       "keywords": [
         "privacy settings", "my privacy", "how do i change privacy settings",
-        "privacy controls", "data settings", "manage my data", "data preferences"
+        "privacy controls", "data settings", "manage my data", "data preferences",
+        "update privacy", "change data settings", "privacy options",
+        "what are my privacy options", "control my data"
       ],
       "response": "⚙️ Privacy Settings\n\nFound under My Data → Privacy Settings in the left sidebar.\n\nWhat you can review and manage:\n- Which data categories are collected for your account\n- Your data retention period\n- Which app exclusions apply\n- Request data export or deletion where permitted\n\nImportant: Some privacy settings are controlled at the organisation level by your admin. Kairos cannot change those settings — only your admin can.\n\nFor data export or deletion requests, contact your HR admin or reach out to the ZoikoTime support team.",
       "route": "/privacy-settings",
@@ -508,10 +644,65 @@
     },
 
     {
+      "id": "data_export",
+      "safety_priority": false,
+      "keywords": [
+        "download my data", "export my data", "data request", "copy of my records",
+        "get my data", "request my data", "download work records",
+        "export my records", "download my records", "data download"
+      ],
+      "response": "📤 Data Export\n\nWhere permitted by your organisation's policy, you may request or download available records from My Data → Privacy Settings or relevant data screens.\n\nFor formal data access requests, contact your HR admin or ZoikoTime support. Kairos cannot approve formal data requests directly.",
+      "route": "/privacy-settings",
+      "suggestions": [
+        "Privacy Settings",
+        "Access History",
+        "Back to Main Menu"
+      ]
+    },
+
+    {
+      "id": "delete_data",
+      "safety_priority": false,
+      "keywords": [
+        "delete my data", "remove my data", "erase my records", "right to deletion",
+        "i want my data deleted", "remove my account", "erase everything",
+        "delete my records", "right to be forgotten", "delete work history",
+        "clear my data", "wipe my records"
+      ],
+      "response": "🗑️ Data Deletion Requests\n\nData deletion depends on your organisation's retention policy and applicable legal or operational requirements. Kairos cannot delete work records directly.\n\nSubmit a request through My Data → Privacy Settings where available, or contact HR admin or ZoikoTime support for formal handling of your request.",
+      "route": "/privacy-settings",
+      "suggestions": [
+        "Privacy Settings",
+        "Speak to a human agent",
+        "Back to Main Menu"
+      ]
+    },
+
+    {
+      "id": "admin_controlled_settings",
+      "safety_priority": false,
+      "keywords": [
+        "why can't i change this", "setting locked", "admin controlled", "policy locked",
+        "greyed out setting", "can't edit setting", "setting disabled",
+        "why is this locked", "who controls this setting", "setting not available",
+        "i can't change screenshots", "tracking is forced on", "can't turn off tracking"
+      ],
+      "response": "🔒 Admin-Controlled Settings\n\nSome settings are controlled by your organisation, including tracking rules, screenshot policy, app categories, retention periods and access permissions.\n\nKairos cannot override admin-controlled settings. If you believe a policy is incorrect for your role, contact your manager, HR or workspace admin.",
+      "route": "/settings",
+      "suggestions": [
+        "Email my manager",
+        "Privacy Settings",
+        "Back to Main Menu"
+      ]
+    },
+
+    {
       "id": "timeline",
+      "safety_priority": false,
       "keywords": [
         "timeline", "my timeline", "work timeline", "daily timeline",
-        "how do i see my timeline", "timeline view", "activity timeline"
+        "how do i see my timeline", "timeline view", "activity timeline",
+        "view my timeline", "workday timeline", "show me my timeline"
       ],
       "response": "📅 Timeline\n\nFound under Work & Activity → Timeline in the left sidebar.\n\nWhat it shows:\n- A full chronological view of your entire workday\n- When you were active, on break or idle — mapped across the day on a time axis\n- App usage and activity periods shown visually\n\nIt's a great way to review your day and understand exactly where your time went.\n\nYou can only view your own timeline.",
       "route": "/timeline",
@@ -524,9 +715,12 @@
 
     {
       "id": "my_schedule",
+      "safety_priority": false,
       "keywords": [
         "my schedule", "schedule", "work schedule", "shift schedule",
-        "when do i work", "view my schedule", "schedule feature"
+        "when do i work", "view my schedule", "schedule feature",
+        "upcoming shifts", "what are my shifts", "shift pattern",
+        "what days do i work", "see my roster", "work roster"
       ],
       "response": "📆 My Schedule\n\nFound under Home → My Schedule in the left sidebar.\n\nCurrent status: This feature is part of the Workforce Surface rollout and will appear once it is enabled for your organisation.\n\nWhen available it will show:\n- Your assigned work schedule and shift patterns\n- Upcoming workdays and rest days\n- Schedule exceptions or changes\n\nIf you need your schedule urgently, please contact your manager directly or check with your HR team.",
       "route": "/schedule",
@@ -540,10 +734,13 @@
 
     {
       "id": "my_timesheet",
+      "safety_priority": false,
       "keywords": [
         "timesheet", "my timesheet", "how do i view my timesheet",
         "time records", "weekly hours", "monthly hours", "hours worked",
-        "view my hours", "timesheet history", "daily hours"
+        "view my hours", "timesheet history", "daily hours",
+        "see my timesheet", "check my hours", "how many hours did i work",
+        "view time records", "hours this week", "hours today"
       ],
       "response": "🗓️ My Timesheet\n\nFound under Time & Attendance → My Timesheet in the left sidebar.\n\nWhat it shows:\n- Daily and weekly breakdown of your worked hours\n- Clock-in and clock-out times for each day\n- Break time, active time and idle time per day\n- Status of any correction requests you have submitted\n\nHow to submit a correction:\n1. Open My Timesheet\n2. Select the date with the incorrect entry\n3. Click Request Correction\n4. Describe the issue and submit\n\nYour manager will review and approve or decline the correction.",
       "route": "/timesheet",
@@ -557,11 +754,15 @@
 
     {
       "id": "leave_requests",
+      "safety_priority": false,
       "keywords": [
         "leave", "apply for leave", "leave request", "how do i apply for leave",
         "request leave", "casual leave", "annual leave", "sick leave",
         "time off", "days off", "leave application", "leave management",
-        "leave balance", "leave history", "leave types", "leave policies"
+        "leave balance", "leave history", "leave types", "leave policies",
+        "how do i request time off", "submit leave", "i need time off",
+        "i want to take leave", "take day off", "vacation request",
+        "maternity leave", "paternity leave", "personal leave"
       ],
       "response": "🏖️ Leave & Requests\n\nFound under Time Off → Leave & Requests in the left sidebar.\n\nTabs available:\n- Apply Leave — Submit a new leave request\n- Leave History — View all your past requests and their status\n- Leave Balance — See your remaining days per leave type\n- Leave Types — View the types of leave available\n- Leave Policies — Read your organisation's leave rules\n\nHow to apply for leave:\n1. Go to Time Off → Leave & Requests\n2. Select Apply Leave\n3. Choose the Leave Type such as Casual Leave\n4. Set From and To dates\n5. Enter your Reason in detail\n6. Click Submit Leave Request",
       "route": "/leave",
@@ -575,11 +776,13 @@
 
     {
       "id": "leave_types",
+      "safety_priority": false,
       "keywords": [
         "leave types", "types of leave", "what leave types are available",
-        "casual leave", "what is casual leave", "annual leave", "sick leave type"
+        "casual leave", "what is casual leave", "annual leave", "sick leave type",
+        "what kinds of leave", "list of leave types", "available leave"
       ],
-      "response": "📋 Leave Types\n\nView all available leave types under Time Off → Leave & Requests → Leave Types.\n\nCommon leave types you may see:\n\n🗓️ Casual Leave — Short-term leave for personal errands or unforeseen events. Deducts from the Annual Leave Shared Pool. Notice required: 5 days. Max: 15 days per year.\n\n🌴 Annual Leave — Standard paid holiday entitlement\n\n🤒 Sick Leave — Leave for illness or medical appointments\n\n🏛️ Public Holidays — Listed separately under Holidays\n\nImportant: Actual leave types, balances and policies depend on your organisation's configuration. Check the Leave Types and Leave Policies tabs for your specific rules.",
+      "response": "📋 Leave Types\n\nView all available leave types under Time Off → Leave & Requests → Leave Types.\n\nCommon leave types you may see:\n\n🗓️ Casual Leave — Short-term leave for personal errands or unforeseen events\n🌴 Annual Leave — Standard paid holiday entitlement\n🤒 Sick Leave — Leave for illness or medical appointments\n🏛️ Public Holidays — Listed separately under Holidays\n\nImportant: Actual leave types, balances and policies depend on your organisation's configuration. Check the Leave Types and Leave Policies tabs for your specific rules.",
       "route": "/leave",
       "suggestions": [
         "How do I apply for leave?",
@@ -590,9 +793,12 @@
 
     {
       "id": "leave_balance",
+      "safety_priority": false,
       "keywords": [
         "leave balance", "how many leave days do i have", "remaining leave",
-        "check leave balance", "my leave balance", "days left"
+        "check leave balance", "my leave balance", "days left",
+        "how many days off do i have", "how much leave is left",
+        "how many sick days", "how many annual leave days"
       ],
       "response": "💼 Checking Your Leave Balance\n\n1. Go to Time Off → Leave & Requests\n2. Click the Leave Balance tab\n\nThis shows your remaining days for each leave type.\n\nIf your balance appears incorrect, contact your HR team or manager directly. Kairos cannot edit leave balances.",
       "route": "/leave",
@@ -606,9 +812,12 @@
 
     {
       "id": "holidays",
+      "safety_priority": false,
       "keywords": [
         "holidays", "public holidays", "holiday list", "national holidays",
-        "bank holidays", "upcoming holidays", "view holidays"
+        "bank holidays", "upcoming holidays", "view holidays",
+        "which days are holidays", "is today a holiday", "holiday calendar",
+        "paid holidays", "unpaid holidays", "organisation holidays"
       ],
       "response": "🎉 Holidays\n\nFound under Time Off → Holidays in the left sidebar.\n\nThis section shows the public and organisational holidays configured for your workspace — including dates and whether they are paid or unpaid days off.\n\nIf you believe a holiday is missing or incorrect, contact your HR team or workspace admin.",
       "route": "/holidays",
@@ -620,10 +829,13 @@
 
     {
       "id": "payslips",
+      "safety_priority": false,
       "keywords": [
         "payslips", "payslip", "my payslip", "how do i view my payslip",
         "salary slip", "pay statement", "pay stub", "view payslip",
-        "download payslip", "monthly payslip", "where are my payslips"
+        "download payslip", "monthly payslip", "where are my payslips",
+        "salary document", "pay record", "view my pay", "check my pay",
+        "wage slip", "income statement", "my salary record"
       ],
       "response": "💰 Payslips\n\nFound under Pay → Payslips in the left sidebar.\n\nWhat you can do:\n- View payslips for each pay period\n- Download payslips as a PDF\n- Review earnings, deductions and net pay\n\nIf a payslip is missing:\nPayslips are generated by your organisation's payroll team. If one hasn't appeared, contact your HR or payroll team.\n\nIf the figures look incorrect:\nRaise it with your HR or payroll team directly. Kairos cannot access or modify payslip data.",
       "route": "/payslips",
@@ -636,10 +848,12 @@
 
     {
       "id": "earnings_estimate",
+      "safety_priority": false,
       "keywords": [
         "earnings estimate", "estimated earnings", "how much will i earn",
         "salary estimate", "wage estimate", "what will i be paid",
-        "pay estimate", "projected pay"
+        "pay estimate", "projected pay", "what is my estimated salary",
+        "how much am i earning", "pay projection", "this month's pay estimate"
       ],
       "response": "💵 Earnings Estimate\n\nFound under Pay → Earnings Estimate in the left sidebar.\n\nWhat it shows:\n- An estimated calculation of your earnings for the current period based on your tracked hours\n- This is an estimate only — your actual pay depends on your contract, deductions and payroll processing\n\nImportant: This is not a confirmed payslip. If there is a significant difference between your estimate and your actual payslip, raise it with your HR or payroll team.\n\nKairos cannot access payroll systems or guarantee earnings figures.",
       "route": "/earnings-estimate",
@@ -653,10 +867,12 @@
 
     {
       "id": "daily_summary",
+      "safety_priority": false,
       "keywords": [
         "daily summary", "today's summary", "today summary",
         "summary of my day", "work summary", "how did i do today",
-        "view daily summary", "insights"
+        "view daily summary", "insights", "end of day summary",
+        "my day summary", "see my insights", "performance today"
       ],
       "response": "📊 Daily Summary\n\nFound under Insights → Daily Summary in the left sidebar.\n\nWhat it shows:\n- 🕐 Work Hours — total time clocked\n- ✅ Active Time — time with detected activity\n- ⏸️ Break Time — official break duration\n- 📈 Productive % — time in productive applications\n- 🟢 Work Status for the day\n- Comparison to your weekly average\n- Top apps used and activity patterns throughout the day\n\nThis data is only visible to you and authorised roles in your organisation.",
       "route": "/daily-summary",
@@ -670,10 +886,13 @@
 
     {
       "id": "productive_apps",
+      "safety_priority": false,
       "keywords": [
         "productive apps", "what are productive apps", "app categories",
         "top apps", "app categorisation", "which apps are productive",
-        "restricted apps", "neutral apps", "work apps", "app usage"
+        "restricted apps", "neutral apps", "work apps", "app usage",
+        "how are apps categorised", "what is a restricted app",
+        "why is my app restricted", "app productivity score"
       ],
       "response": "💻 Productive Apps & App Categorisation\n\nZoikoTime categorises the apps you use into three types:\n\n✅ Productive — Work-related apps your org has classified as productive\n⚪ Neutral — General-use apps not classified as productive or restricted\n🚫 Restricted — Apps your organisation has flagged as off-limits during work hours\n\nTop Apps Today is shown on your Today screen and displays which apps you used most.\n\nWho sets these categories?\nYour organisation's admin configures app classifications. If you believe an app is miscategorised, raise it with your manager or IT team.",
       "route": "/activity-log",
@@ -686,13 +905,16 @@
 
     {
       "id": "zoiko_connect",
+      "safety_priority": false,
       "keywords": [
-        "zoiko connect", "connect", "messaging", "team chat", "channels",
+        "zoiko connect", "zoiko sema", "sema", "connect", "messaging", "team chat", "channels",
         "direct messages", "meetings", "calls", "team channels",
         "what is zoiko connect", "how do i use zoiko connect",
-        "send a message", "view messages"
+        "send a message", "view messages", "communication",
+        "chat with colleagues", "team communication", "instant messaging",
+        "video calls", "how to message", "where is messaging"
       ],
-      "response": "💬 Zoiko Connect\n\nFound under Communication → Zoiko Connect in the left sidebar.\n\nWhat you can do:\n- 📩 Messages — Direct messages with teammates\n- 📢 Channels — Team-wide discussions\n- 🎥 Meetings & Calls — Schedule and join meetings\n\nTo open Connect:\nClick Zoiko Connect in the sidebar — it opens as an overlay panel on the right side of the app.\n\nPrivacy note:\nChannel messages are visible to all channel participants. Direct messages are only visible to the participants involved.",
+      "response": "💬 Zoiko Connect\n\nFound under Communication → Zoiko Connect in the left sidebar.\n\nWhat you can do:\n- 📩 Messages — Direct messages with teammates\n- 📢 Channels — Team-wide discussions\n- 🎥 Meetings & Calls — Schedule and join meetings\n\nTo open Connect:\nClick Zoiko Connect in the sidebar — it opens as an overlay panel on the right side of the app.\n\nPrivacy note:\nChannel messages are visible to all channel participants. Direct messages are only visible to the participants involved, subject to your organisation's approved access and escalation rules.",
       "route": "/connect",
       "suggestions": [
         "How do I send a direct message?",
@@ -703,11 +925,13 @@
 
     {
       "id": "direct_messages",
+      "safety_priority": false,
       "keywords": [
         "direct messages", "dm", "private message", "send a direct message",
-        "message a colleague", "personal message"
+        "message a colleague", "personal message", "one on one message",
+        "send message", "chat privately", "individual message"
       ],
-      "response": "📩 Direct Messages in Zoiko Connect\n\n1. Open Zoiko Connect from the left sidebar\n2. Click on Direct Messages\n3. Select a contact or start a new conversation\n4. Type your message and send\n\nDirect messages are private between you and the recipient. They are not visible to other team members or managers unless escalated through an approved process.",
+      "response": "📩 Direct Messages in Zoiko Connect\n\n1. Open Zoiko Connect from the left sidebar\n2. Click on Direct Messages\n3. Select a contact or start a new conversation\n4. Type your message and send\n\nDirect messages are private between you and the recipient. They are not visible to other team members. Access may still be subject to your organisation's approved security or escalation policies.",
       "route": "/connect",
       "suggestions": [
         "What are Team Channels?",
@@ -718,9 +942,11 @@
 
     {
       "id": "team_channels",
+      "safety_priority": false,
       "keywords": [
         "team channels", "channels", "channel", "what are channels",
-        "how do i join a channel", "team discussion", "group chat"
+        "how do i join a channel", "team discussion", "group chat",
+        "join a channel", "channel messages", "broadcast message", "team broadcast"
       ],
       "response": "📢 Team Channels in Zoiko Connect\n\nChannels are shared spaces for team communication.\n\nHow to access:\n1. Open Zoiko Connect from the left sidebar\n2. Expand Team Channels\n3. Select a channel to view or participate\n\nAll members of a channel can see the messages within it. Messages are also accessible to authorised admins.\n\nIf you need a new channel or need to be added to an existing one, contact your manager or workspace admin.",
       "route": "/connect",
@@ -733,9 +959,12 @@
 
     {
       "id": "profile_settings",
+      "safety_priority": false,
       "keywords": [
         "profile", "my profile", "edit profile", "update profile",
-        "change my name", "profile settings", "account profile"
+        "change my name", "profile settings", "account profile",
+        "update my information", "change profile picture", "edit account details",
+        "view my profile", "account information", "personal details"
       ],
       "response": "👤 Profile\n\nFound under Account → Profile in the left sidebar.\n\nWhat you can update:\n- Your name and display information\n- Profile picture\n- Contact details subject to your org's configuration\n\nSome fields may be locked by your organisation's admin such as your work email. If you need to change a locked field, contact your HR or admin team.",
       "route": "/profile",
@@ -748,9 +977,13 @@
 
     {
       "id": "notifications",
+      "safety_priority": false,
       "keywords": [
         "notifications", "my notifications", "turn off notifications",
-        "notification settings", "alerts", "how do i manage notifications"
+        "notification settings", "alerts", "how do i manage notifications",
+        "disable notifications", "enable notifications",
+        "i'm not getting notifications", "too many notifications",
+        "notification preferences", "alert settings"
       ],
       "response": "🔔 Notifications\n\nFound under Account → Notifications in the left sidebar.\n\nWhat you can manage:\n- Turn specific notification types on or off\n- Choose how you receive alerts — in-app or email\n- Manage leave approval updates, timesheet reminders and more\n\nIf you're not receiving expected notifications, check your settings here first.",
       "route": "/notifications",
@@ -762,9 +995,11 @@
 
     {
       "id": "settings",
+      "safety_priority": false,
       "keywords": [
         "settings", "app settings", "how do i open settings",
-        "configuration", "preferences", "app configuration"
+        "configuration", "preferences", "app configuration",
+        "where are settings", "how to change settings", "adjust settings"
       ],
       "response": "⚙️ Settings\n\nFound under Account → Settings in the left sidebar.\n\nWhat you can configure:\n- Theme — Light or Dark mode\n- Language and locale preferences\n- Display preferences\n- App behaviour settings\n\nNote: Some settings are controlled at the organisation level by your admin and cannot be changed individually.",
       "route": "/settings",
@@ -777,9 +1012,12 @@
 
     {
       "id": "dark_mode",
+      "safety_priority": false,
       "keywords": [
         "dark mode", "light mode", "change theme", "switch to dark",
-        "switch theme", "night mode", "app theme"
+        "switch theme", "night mode", "app theme",
+        "enable dark mode", "turn on dark mode", "dark background",
+        "bright screen", "theme preference"
       ],
       "response": "🌙 Dark / Light Mode\n\nYou can switch between dark and light themes using the moon or sun icon in the top-right corner of the app header.\n\nAlternatively go to Account → Settings to set your preferred theme permanently.",
       "route": "/settings",
@@ -791,9 +1029,12 @@
 
     {
       "id": "language_locale",
+      "safety_priority": false,
       "keywords": [
         "language", "change language", "locale", "language settings",
-        "app language", "region settings", "us english"
+        "app language", "region settings", "us english",
+        "switch language", "set language", "display language",
+        "language preference", "region preference"
       ],
       "response": "🌐 Language & Locale\n\nYou can change the app language using the language selector shown as US English by default in the top-right corner of the app header.\n\nFor workspace-level locale changes, contact your admin.",
       "route": "/settings",
@@ -804,12 +1045,87 @@
     },
 
     {
+      "id": "permissions",
+      "safety_priority": false,
+      "keywords": [
+        "screen recording permission", "accessibility permission", "mac permission",
+        "permission denied", "system permissions", "grant permissions",
+        "allow screen recording", "accessibility access", "app permissions",
+        "permission blocked", "permission required", "it says permission denied",
+        "need permission", "permissions on mac", "permissions on windows"
+      ],
+      "response": "🖥️ System Permissions\n\nZoikoTime may require system permissions such as Screen Recording and Accessibility, depending on your organisation's enabled features.\n\nIf a permission prompt appears:\n1. Follow the system instructions to grant the required permission\n2. Restart ZoikoTime after granting permission\n\nIf permissions are managed by your company IT policy, contact your IT admin for assistance.",
+      "route": "/today",
+      "suggestions": [
+        "App not tracking",
+        "Speak to a human agent",
+        "Back to Main Menu"
+      ]
+    },
+
+    {
+      "id": "offline_sync",
+      "safety_priority": false,
+      "keywords": [
+        "offline", "sync issue", "internet down", "data not syncing",
+        "not syncing", "no internet", "lost connection", "connection issue",
+        "data not saved", "session not saved", "hours not synced",
+        "sync failed", "out of sync", "internet problem"
+      ],
+      "response": "🔄 Sync & Connectivity\n\nZoikoTime needs an internet connection to sync session data. If your connection drops, the app may temporarily show delayed updates.\n\nWhat to do:\n1. Reconnect to the internet\n2. Keep the app open and allow it to sync automatically\n3. If records still appear missing after syncing, check My Timesheet or contact support",
+      "route": "/timesheet",
+      "suggestions": [
+        "View my Timesheet",
+        "App not working",
+        "Back to Main Menu"
+      ]
+    },
+
+    {
+      "id": "multiple_devices",
+      "safety_priority": false,
+      "keywords": [
+        "new laptop", "different computer", "multiple devices", "changed device",
+        "switched computer", "new computer", "new device", "using a different device",
+        "moved to new laptop", "company laptop", "reinstall on new computer"
+      ],
+      "response": "💻 Device Changes\n\nIf you use a new or different work device, ZoikoTime may require sign-in, verification and system permissions again. Device signals may also be reviewed under your organisation's policy.\n\nIf the new device is company-managed, contact your IT team if installation or permissions are blocked.",
+      "route": "/today",
+      "suggestions": [
+        "Login issue",
+        "App not tracking",
+        "Back to Main Menu"
+      ]
+    },
+
+    {
+      "id": "uninstall",
+      "safety_priority": false,
+      "keywords": [
+        "uninstall", "remove app", "delete app", "disable tracker",
+        "how do i uninstall", "remove zoikotime", "get rid of zoikotime",
+        "turn off tracker", "stop tracking", "deactivate app"
+      ],
+      "response": "🧩 Uninstalling or Removing ZoikoTime\n\nIf ZoikoTime is installed by your organisation, you may not be able to remove or disable it yourself. Contact your manager, IT admin or HR team for guidance.\n\nKairos cannot help bypass organisation controls or disable transparent tracking during assigned work sessions.",
+      "route": "/today",
+      "suggestions": [
+        "Privacy Settings",
+        "Speak to a human agent",
+        "Back to Main Menu"
+      ]
+    },
+
+    {
       "id": "app_not_tracking",
+      "safety_priority": false,
       "keywords": [
         "app not tracking", "not tracking", "tracker not working",
         "time not being recorded", "activity not showing",
         "desktop tracker not running", "tracker stopped",
-        "my hours are not showing", "not recording my work"
+        "my hours are not showing", "not recording my work",
+        "tracker is off", "time isn't recording", "activity missing",
+        "no activity shown", "hours missing", "tracker isn't working",
+        "work not being tracked", "hours not being saved"
       ],
       "response": "🔧 App Not Tracking — Troubleshooting\n\nStep 1 — Check your status\n- Look at the top of your Today screen — does it show Working in green?\n- Check the floating badge in the bottom-right corner — is the timer running?\n\nStep 2 — Make sure you're clocked in\n- If there's no active session you may need to clock in\n\nStep 3 — Restart the app\n- Close and reopen the ZoikoTime desktop app fully\n- Ensure the app has the necessary system permissions such as screen recording and accessibility\n\nStep 4 — Check your internet connection\n- ZoikoTime requires an active connection to sync your session data\n\nStep 5 — Still not working?\nContact the ZoikoTime support team or say \"Email my manager\" and I'll prepare a message on your behalf.",
       "route": "/today",
@@ -823,10 +1139,14 @@
 
     {
       "id": "cant_login",
+      "safety_priority": false,
       "keywords": [
         "can't login", "cannot login", "login issue", "sign in problem",
         "forgot password", "locked out", "password reset",
-        "account locked", "cannot sign in", "login not working"
+        "account locked", "cannot sign in", "login not working",
+        "i can't log in", "password forgotten", "email not recognised",
+        "wrong password", "reset my password", "account issue",
+        "login error", "sign in failed"
       ],
       "response": "🔐 Login Issues\n\nForgot your password?\n- On the login screen click Forgot Password\n- Enter your registered work email\n- Follow the reset link sent to your inbox\n\nAccount locked?\n- After multiple failed login attempts your account may be temporarily locked\n- Wait 15 minutes and try again, or contact your admin\n\nStill can't log in?\nContact ZoikoTime support or your organisation's IT or HR team as they may manage account access.",
       "route": "/today",
@@ -839,10 +1159,13 @@
 
     {
       "id": "app_slow_or_crashing",
+      "safety_priority": false,
       "keywords": [
         "app is slow", "app crashing", "app freezing", "app not responding",
         "zoikotime crashed", "slow performance", "app keeps closing",
-        "app not loading", "app stuck"
+        "app not loading", "app stuck", "app hanging", "performance issues",
+        "lagging", "not responding", "keeps crashing", "app keeps freezing",
+        "slow app", "zoikotime is slow"
       ],
       "response": "🛠️ App Performance Issues\n\nQuick fixes to try:\n1. Restart the app — close it fully and reopen\n2. Check for updates — make sure you're on the latest version\n3. Restart your computer — clears memory and background processes\n4. Check system resources — ensure your device isn't overloaded with other heavy applications\n\nIf the problem persists, contact ZoikoTime support with your operating system version, ZoikoTime app version and a description of when the issue happens.",
       "route": "/today",
@@ -855,9 +1178,11 @@
 
     {
       "id": "sign_out",
+      "safety_priority": false,
       "keywords": [
         "sign out", "log out", "logout", "how do i sign out",
-        "how do i log out", "exit app"
+        "how do i log out", "exit app", "quit app", "leave the app",
+        "signing out", "logging out", "end session"
       ],
       "response": "🚪 Signing Out\n\n1. Scroll to the bottom of the left sidebar\n2. Click Sign Out\n\nImportant: Make sure you Clock Out before signing out so your work session is properly recorded. If you sign out without clocking out, your session may be flagged as incomplete.",
       "route": "/today",
@@ -869,12 +1194,17 @@
 
     {
       "id": "covert_monitoring_refusal",
+      "safety_priority": true,
       "keywords": [
         "monitor secretly", "hidden monitoring", "spy on employees",
         "track without them knowing", "monitor without consent",
         "hide tracking", "stealth mode", "covert monitoring",
         "monitor employees secretly", "surveillance without notice",
-        "bypass transparency", "hide from employees"
+        "bypass transparency", "hide from employees",
+        "stealth tracking", "secret monitoring", "invisible tracking",
+        "track staff without knowing", "background monitoring",
+        "monitor without telling them", "hide the tracker",
+        "covert tracking", "install silently", "secret surveillance"
       ],
       "response": "🚫 I can't help with that.\n\nKairos is not able to assist with setting up hidden, covert or non-transparent monitoring.\n\nZoikoTime is designed for transparent, policy-based workforce visibility — where employees are always informed about what is tracked, why and how it is used.\n\nIf you're looking to configure responsible workforce oversight with proper notices, role-based access and policy controls, I can help with that instead.",
       "suggestions": [
@@ -885,10 +1215,14 @@
 
     {
       "id": "legal_advice_refusal",
+      "safety_priority": true,
       "keywords": [
         "legal advice", "am i legally protected", "is this legal",
         "wage lawsuit", "compliance guarantee", "sue my employer",
-        "employment law", "is monitoring legal", "legal liability"
+        "employment law", "is monitoring legal", "legal liability",
+        "can i take legal action", "gdpr compliance", "data protection law",
+        "is this gdpr compliant", "what does the law say", "legal rights",
+        "legally protected", "privacy law"
       ],
       "response": "⚖️ Legal Advice — Outside My Scope\n\nKairos is not able to provide legal advice, compliance determinations or employment law guidance.\n\nZoikoTime provides audit-ready records, exportable evidence packs and transparent access logs which support legal and HR processes — but for actual legal questions, please consult qualified legal counsel familiar with your jurisdiction.",
       "suggestions": [
@@ -899,10 +1233,13 @@
 
     {
       "id": "hr_discipline_refusal",
+      "safety_priority": true,
       "keywords": [
         "should i fire this employee", "can i terminate", "disciplinary action",
         "performance improvement plan advice", "pip advice",
-        "how to discipline", "grounds for dismissal", "fire someone"
+        "how to discipline", "grounds for dismissal", "fire someone",
+        "terminate an employee", "write a pip", "warning letter",
+        "disciplinary advice", "dismissal advice", "performance review advice"
       ],
       "response": "🚫 HR Disciplinary Advice — Outside My Scope\n\nKairos is not able to recommend disciplinary actions, terminations or HR performance decisions.\n\nI can explain how ZoikoTime's session records, audit logs and evidence exports work — which your HR team can use as part of a proper human-led review process.\n\nPlease consult your HR team or legal counsel for all disciplinary decisions.",
       "suggestions": [
@@ -914,9 +1251,12 @@
 
     {
       "id": "help",
+      "safety_priority": false,
       "keywords": [
         "help", "i need help", "support", "having a problem",
-        "need assistance", "something is wrong", "i have an issue"
+        "need assistance", "something is wrong", "i have an issue",
+        "i'm stuck", "confused", "can you help", "i don't know how",
+        "i'm having trouble", "what do i do", "assist me"
       ],
       "response": "🙋 Help & Support\n\nI'm here to help! Tell me what you're experiencing and I'll do my best to guide you.\n\nIf you'd prefer to speak to the ZoikoTime support team directly:\n\n📞 Call us: 1-800-484-5574 (Free) | 1-631-833-9395\n📧 Email: sales@zoikotime.com\n\n🌐 Contact us: https://www.zoikotime.com/contact\n\nOr say \"Email my manager\" and I'll prepare a message to your manager on your behalf.",
       "suggestions": [
@@ -930,11 +1270,15 @@
 
     {
       "id": "agent_escalation",
+      "safety_priority": false,
       "keywords": [
         "speak to a human", "human agent", "real person", "agent",
         "speak to someone", "connect me", "live support",
         "i need help from a person", "escalate", "support team",
-        "contact zoikotime", "call zoikotime", "speak to support"
+        "contact zoikotime", "call zoikotime", "speak to support",
+        "i want to talk to someone", "connect me to support",
+        "live chat", "phone support", "customer support", "speak to a rep",
+        "talk to someone", "real human", "talk to support"
       ],
       "response": "👤 Connecting You to the ZoikoTime Team\n\nOur team is ready to help you.\n\n📞 Call us:\n- Toll-Free: 1-800-484-5574\n- Direct: 1-631-833-9395\n\n📧 Email: sales@zoikotime.com\n\n🌐 Contact us: https://www.zoikotime.com/contact\n\n📍 US Office: 1401 21st Street, Suite R, Sacramento CA 95811\n📍 EU Office: 67-69 Great Portland Street, 5th Floor, London W1W 5PF\n\nOr say \"Email my manager\" and I'll prepare a message to your manager using the details from your account profile.",
       "suggestions": [
@@ -944,10 +1288,31 @@
     },
 
     {
+      "id": "email_manager",
+      "safety_priority": false,
+      "keywords": [
+        "email my manager", "contact my manager", "send to manager",
+        "notify my manager", "escalate to manager",
+        "message my manager", "tell my manager",
+        "send message to manager", "forward to manager", "manager email",
+        "send email to boss", "contact my boss", "email my boss"
+      ],
+      "response": "I'll prepare an email to your manager on your behalf.\n\nYour manager's email has been loaded from your account profile. Here's a draft:\n\n---\nSubject: Support Request via Kairos — ZoikoTime\n\nHi [Manager Name],\n\nI'm reaching out regarding an issue I was unable to resolve through the Kairos assistant on the ZoikoTime desktop app.\n\nEmployee: [Your Name]\nEmail: [Your Work Email]\nIssue Summary: [Auto-filled from your last conversation with Kairos]\n\nCould you please assist or escalate this further if needed?\n\nThank you.\n---\n\nShall I send this now? Reply \"Yes, send it\" or \"Let me edit it first\".",
+      "suggestions": [
+        "Yes, send it",
+        "Let me edit it first",
+        "Speak to a human agent"
+      ]
+    },
+
+    {
       "id": "thank_you",
+      "safety_priority": false,
       "keywords": [
         "thank you", "thanks", "thank u", "cheers", "appreciate it",
-        "many thanks", "thx", "ty", "great help", "that helped"
+        "many thanks", "thx", "ty", "great help", "that helped",
+        "you were helpful", "thanks a lot", "thanks so much",
+        "brilliant thanks", "perfect thanks", "got it thanks"
       ],
       "response": "You're very welcome! 🙏 Happy to help.\n\nIs there anything else I can assist you with today?",
       "suggestions": [
@@ -958,9 +1323,12 @@
 
     {
       "id": "goodbye",
+      "safety_priority": false,
       "keywords": [
         "goodbye", "bye", "bye bye", "see you", "cya", "later",
-        "take care", "farewell", "thanks bye", "that's all"
+        "take care", "farewell", "thanks bye", "that's all",
+        "i'm done", "all good", "done for now", "see ya", "until next time",
+        "have a good day", "all sorted", "i'm sorted"
       ],
       "response": "Take care! 👋 It was great helping you today.\n\nI'm here 24/7 whenever you need me. Have a productive day!",
       "suggestions": []
