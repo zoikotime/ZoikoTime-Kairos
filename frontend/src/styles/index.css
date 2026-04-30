@@ -172,19 +172,6 @@ input {
   gap: 1rem;
 }
 
-.brand-mark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 58px;
-  width: 58px;
-  border-radius: 18px;
-  background: linear-gradient(145deg, #f6fffd 0%, #c9f5e8 100%);
-  color: #1d4e61;
-  font-size: 1.4rem;
-  font-weight: 800;
-  box-shadow: 0 0 0 1px rgba(81, 240, 210, 0.25);
-}
 
 .eyebrow {
   margin: 0 0 0.3rem;

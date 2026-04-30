@@ -77,18 +77,29 @@ export default function ChatHeader({
       {/* ── Logo + Title + Badge ── */}
       <div className="flex flex-1 items-center gap-3 min-w-0 ">
         {/* ✅ FIXED LOGO ONLY */}
-        <div className="relative flex items-center ">
-          {/* Logo */}
-          <img src="/logo.png" alt="logo" className="h-9 w-20 object-contain" />
+        <div className="relative flex items-center">
+          {/* Desktop Logo */}
+          <img
+            src="./logo.png"
+            alt="logo"
+            className="hidden lg:block h-5 w-auto object-contain "
+          />
 
-          {/* Simple indicator */}
+          {/* Mobile / Tablet Logo */}
+          <img
+            src="./response-icon.png"
+            alt="mobile logo"
+            className="block lg:hidden h-7 w-auto object-contain"
+          />
+
+          {/* Indicator */}
           <span className="absolute -bottom-0 -right-0 h-2 w-2 rounded-full bg-green-500 border border-white"></span>
         </div>
 
         {/* Name + badge */}
         <div className="flex min-w-0 flex-col gap-[6px]">
           <span
-            className={`truncate font-bold text-[1.0rem] leading-none ${
+            className={`truncate font-extrabold text-[1.5rem]  leading-none ${
               isDark ? "text-[#d4f0dc]" : "text-[#0f3d20]"
             }`}
           >

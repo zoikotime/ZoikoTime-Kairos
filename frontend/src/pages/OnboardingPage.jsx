@@ -94,7 +94,9 @@ export default function OnboardingPage() {
         transition={{ duration: 0.5 }}
       >
         <div className="brand-row">
-          <div className="brand-mark">K</div>
+          <div className="img-ctn h-14 w-14 rounded-full border-2 border-green-500" >
+            <img src='./response-icon.png' alt="" className="h-full w-full object-contain"/>
+          </div>
           <div>
             <p className="eyebrow">{copy.onboardingTag}</p>
             <h1>Koiris</h1>
