@@ -178,10 +178,10 @@ export default function ChatPage() {
       {
         id: `mail-${Date.now()}`,
         role: "assistant",
-        content: <MailResponse />,
+        content: <MailResponse theme={theme} />,
       },
     ]);
-  }, [messages, replaceMessages]);
+  }, [messages, replaceMessages, theme]);
 
   const handleNewChat = useCallback(async () => {
     if (sessionId) {
@@ -227,51 +227,61 @@ export default function ChatPage() {
   }, [replaceMessages]);
 
   return (
-    <>
-      {/* 🔥 YOUR ORIGINAL UI RESTORED */}
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-full max-w-2xl flex flex-col h-[90vh] border rounded-xl overflow-hidden">
+    <div
+      className={`min-h-screen flex items-center justify-center px-3 py-4 sm:px-4 transition-colors duration-300 ${
+        isDark ? "bg-[rgba(2,6,3,1)]" : "bg-[rgba(240,253,244,1)]"
+      }`}
+    >
+      <div
+        className={`w-full max-w-2xl flex flex-col h-[90vh] sm:h-[88vh] border rounded-2xl overflow-hidden shadow-2xl transition-all duration-300 ${
+          isDark
+            ? "border-[rgba(80,214,123,0.12)] bg-[rgba(5,11,6,0.98)] shadow-[0_8px_40px_rgba(0,0,0,0.6)]"
+            : "border-[rgba(31,154,70,0.2)] bg-white shadow-[0_8px_40px_rgba(34,197,94,0.1)]"
+        }`}
+      >
+        <ChatHeader
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          lang={lang}
+          onLangChange={setLang}
+          openPanel={openPanel}
+          onTogglePanel={(panel) =>
+            setOpenPanel((prev) => (prev === panel ? null : panel))
+          }
+          onClosePanel={() => setOpenPanel(null)}
+          sessions={sessions}
+          onSelectSession={handleSelectSession}
+          onNewChat={handleNewChat}
+          onMailClick={handleMailClick}
+        />
 
-          <ChatHeader
-            theme={theme}
-            onToggleTheme={toggleTheme}
-            lang={lang}
-            onLangChange={setLang}
-            openPanel={openPanel}
-            onTogglePanel={(panel) =>
-              setOpenPanel((prev) => (prev === panel ? null : panel))
-            }
-            onClosePanel={() => setOpenPanel(null)}
-            sessions={sessions}
-            onSelectSession={handleSelectSession}
-            onNewChat={handleNewChat}
-            onMailClick={handleMailClick}
-          />
+        <div
+          className={`flex-1 overflow-y-auto p-3 sm:p-4 transition-colors duration-300 ${
+            isDark ? "bg-[rgba(5,11,6,0.98)]" : "bg-white"
+          }`}
+        >
+          {messages.map((message) => (
+            <MessageBubble
+              key={message.id}
+              msg={message}
+              onSuggestion={sendMessage}
+              theme={theme}
+            />
+          ))}
 
-          <div className="flex-1 overflow-y-auto p-4">
-            {messages.map((message) => (
-              <MessageBubble
-                key={message.id}
-                msg={message}
-                onSuggestion={sendMessage}
-                theme={theme}
-              />
-            ))}
-
-            {isTyping && <TypingDots />}
-            <div ref={bottomRef} />
-          </div>
-
-          <Composer
-            input={input}
-            setInput={setInput}
-            isTyping={isTyping}
-            onSend={sendMessage}
-            onClear={clearChat}
-            theme={theme}
-          />
+          {isTyping && <TypingDots />}
+          <div ref={bottomRef} />
         </div>
+
+        <Composer
+          input={input}
+          setInput={setInput}
+          isTyping={isTyping}
+          onSend={sendMessage}
+          onClear={clearChat}
+          theme={theme}
+        />
       </div>
-    </>
+    </div>
   );
 }

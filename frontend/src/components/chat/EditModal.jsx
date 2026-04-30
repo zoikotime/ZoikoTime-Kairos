@@ -23,7 +23,7 @@ export default function EditModal({ lastUserMsg, onSubmit, onClose, theme }) {
             Edit Message
           </span>
           <button onClick={onClose} className="orbit-icon-button h-8 w-8 rounded-[11px]">
-            <HiOutlineXMark className="h-4 w-4" />
+            <HiOutlineXMark className="h-4 w-4 " />
           </button>
         </div>
         <textarea

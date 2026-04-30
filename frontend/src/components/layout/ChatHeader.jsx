@@ -41,53 +41,80 @@ export default function ChatHeader({
   useEffect(() => {
     function handleOutsideClick(event) {
       if (!panelRef.current) return;
-
-      // ✅ ONLY close if clicked OUTSIDE
       if (!panelRef.current.contains(event.target)) {
         onClosePanel();
         setActionOpen(false);
       }
     }
-
-    // ✅ use click (NOT mousedown)
     setTimeout(() => {
       document.addEventListener("click", handleOutsideClick);
     }, 0);
-
     return () => {
       document.removeEventListener("click", handleOutsideClick);
     };
   }, [onClosePanel]);
 
-  const iconButton =
-    "orbit-icon-button flex h-9 min-w-9 items-center justify-center rounded-[12px] border transition-all";
+  const iconButton = `flex h-9 min-w-9 items-center justify-center rounded-[12px] border transition-all duration-200 ${
+    isDark
+      ? "border-[rgba(80,214,123,0.2)] bg-[rgba(15,51,27,0.5)] text-[#6dce91] hover:border-[rgba(80,214,123,0.55)] hover:bg-[rgba(15,51,27,0.85)] hover:text-[#8df3a9]"
+      : "border-[rgba(31,154,70,0.28)] bg-[rgba(80,214,123,0.07)] text-[#217a40] hover:border-[rgba(31,154,70,0.55)] hover:bg-[rgba(80,214,123,0.15)] hover:text-[#145c2a]"
+  }`;
 
-  const wideButton =
-    "flex h-9 items-center gap-1.5 rounded-[12px] border px-2.5 text-[0.65rem] font-bold transition-all";
-
-  const activeButton = isDark
-    ? "border-[rgba(80,214,123,0.45)] bg-[rgba(15,51,27,0.9)] text-[#8df3a9]"
-    : "border-[rgba(31,154,70,0.35)] bg-[rgba(80,214,123,0.14)] text-[#176d38]";
+  const wideButton = `flex h-9 items-center gap-1.5 rounded-[12px] border px-2.5 text-[0.65rem] font-bold transition-all duration-200 ${
+    isDark
+      ? "border-[rgba(80,214,123,0.2)] bg-[rgba(15,51,27,0.5)] text-[#6dce91] hover:border-[rgba(80,214,123,0.55)] hover:bg-[rgba(15,51,27,0.85)] hover:text-[#8df3a9]"
+      : "border-[rgba(31,154,70,0.28)] bg-[rgba(80,214,123,0.07)] text-[#217a40] hover:border-[rgba(31,154,70,0.55)] hover:bg-[rgba(80,214,123,0.15)] hover:text-[#145c2a]"
+  }`;
 
   return (
     <header
-      className={`relative flex items-center gap-3 border-b px-5 py-3.5 ${
+      className={`relative flex items-center gap-3 border-b px-1 py-1 sm:px-5 sm:py-3 ${
         isDark
-          ? "border-[rgba(255,255,255,0.05)] bg-[rgba(5,11,6,0.96)]"
-          : "border-[rgba(31,154,70,0.18)] bg-[rgba(245,255,248,0.96)]"
+          ? "border-[rgba(80,214,123,0.1)] bg-[rgba(5,11,6,0.97)]"
+          : "border-[rgba(31,154,70,0.18)] bg-[rgba(245,255,248,0.97)]"
       }`}
     >
-      {/* Title */}
-      <div className="flex-1">Kioris</div>
+      {/* ── Logo + Title + Badge ── */}
+      <div className="flex flex-1 items-center gap-3 min-w-0 ">
+        {/* ✅ FIXED LOGO ONLY */}
+        <div className="relative flex items-center ">
+          {/* Logo */}
+          <img src="/logo.png" alt="logo" className="h-9 w-20 object-contain" />
 
-      <div className="relative flex items-center gap-1.5" ref={panelRef}>
-        {/* History */}
+          {/* Simple indicator */}
+          <span className="absolute -bottom-0 -right-0 h-2 w-2 rounded-full bg-green-500 border border-white"></span>
+        </div>
+
+        {/* Name + badge */}
+        <div className="flex min-w-0 flex-col gap-[6px]">
+          <span
+            className={`truncate font-bold text-[1.0rem] leading-none ${
+              isDark ? "text-[#d4f0dc]" : "text-[#0f3d20]"
+            }`}
+          >
+            Kioris
+          </span>
+          <span
+            className={`inline-flex w-fit items-center rounded-full px-2 py-[2px] text-[0.6rem] font-black uppercase tracking-wider leading-none ${
+              isDark
+                ? "bg-[rgba(34,197,94,0.15)] text-[#4ade80] ring-1 ring-[rgba(34,197,94,0.25)]"
+                : "bg-[rgba(34,197,94,0.12)] text-[#16a34a] ring-1 ring-[rgba(34,197,94,0.3)]"
+            }`}
+          >
+            ⚡ZoikoTime Assistant
+          </span>
+        </div>
+      </div>
+
+      {/* ── Right actions ── */}
+      <div
+        className="relative flex items-center gap-1.5 shrink-0"
+        ref={panelRef}
+      >
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-           
-
             onTogglePanel("history");
           }}
           className={iconButton}
@@ -95,62 +122,76 @@ export default function ChatHeader({
           <HiOutlineClock className="h-[17px] w-[17px]" />
         </button>
 
-        {/* Theme */}
         <button type="button" onClick={onToggleTheme} className={iconButton}>
-          {isDark ? <HiOutlineSun /> : <HiOutlineMoon />}
+          {isDark ? (
+            <HiOutlineSun className="h-[17px] w-[17px]" />
+          ) : (
+            <HiOutlineMoon className="h-[17px] w-[17px]" />
+          )}
         </button>
 
-        {/* Language */}
-        <button
+        {/* <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             onTogglePanel("lang");
           }}
-          className={wideButton}
+          className={`${wideButton} hidden sm:flex`}
         >
-          <HiOutlineGlobeAlt />
+          <HiOutlineGlobeAlt className="h-[15px] w-[15px]" />
           {currentLanguage.short}
-        </button>
+        </button> */}
 
-        {/* MENU */}
         <div className="relative">
           <button
             type="button"
             onClick={() => setActionOpen((p) => !p)}
-            className="flex h-10 items-center gap-2 rounded-[14px] border px-3"
+            className={wideButton}
           >
-            <TiThMenu />
-            MENU
+            <TiThMenu className="h-[15px] w-[15px]" />
+            <span className="hidden sm:inline">MENU</span>
           </button>
 
           {actionOpen && (
-            <div className="absolute right-0 mt-2 w-44 rounded-xl border bg-white shadow-lg z-50">
+            <div
+              className={`absolute right-0 mt-2 w-44 rounded-xl border shadow-xl z-50 overflow-hidden ${
+                isDark
+                  ? "border-[rgba(80,214,123,0.16)] bg-[rgba(4,14,7,0.98)]"
+                  : "border-[rgba(31,154,70,0.2)] bg-white"
+              }`}
+            >
               <button
                 type="button"
                 onClick={() => {
                   setActionOpen(false);
                   onNewChat();
                 }}
-                className="flex items-center gap-2 w-full px-4 py-2 hover:bg-green-400/20"
+                className={`flex items-center gap-2 w-full px-4 py-2.5 text-sm transition-all ${
+                  isDark
+                    ? "text-[#b8d8c0] hover:bg-[rgba(80,214,123,0.08)] hover:text-[#e5ffea]"
+                    : "text-[#1a5c32] hover:bg-[rgba(80,214,123,0.12)] hover:text-[#0f3d20]"
+                }`}
               >
-                <HiOutlineChatAlt2 /> New Conversation
+                <HiOutlineChatAlt2 className="h-4 w-4 shrink-0" /> New
+                Conversation
               </button>
 
               <button
                 type="button"
                 onClick={(e) => {
-                 
                   e.preventDefault();
                   e.stopPropagation();
                   setActionOpen(false);
                   startEditing();
                   navigate("/");
                 }}
-                className="flex items-center gap-2 w-full px-4 py-2 hover:bg-green-400/20"
+                className={`flex items-center gap-2 w-full px-4 py-2.5 text-sm transition-all ${
+                  isDark
+                    ? "text-[#b8d8c0] hover:bg-[rgba(80,214,123,0.08)] hover:text-[#e5ffea]"
+                    : "text-[#1a5c32] hover:bg-[rgba(80,214,123,0.12)] hover:text-[#0f3d20]"
+                }`}
               >
-                <HiOutlinePencil className="h-[16px] w-[16px]" />
-                Edit Details
+                <HiOutlinePencil className="h-4 w-4 shrink-0" /> Edit Details
               </button>
 
               <button
@@ -159,14 +200,17 @@ export default function ChatHeader({
                   setActionOpen(false);
                   onMailClick();
                 }}
-                className="flex items-center gap-2 w-full px-4 py-2 hover:bg-green-400/20"
+                className={`flex items-center gap-2 w-full px-4 py-2.5 text-sm transition-all ${
+                  isDark
+                    ? "text-[#b8d8c0] hover:bg-[rgba(80,214,123,0.08)] hover:text-[#e5ffea]"
+                    : "text-[#1a5c32] hover:bg-[rgba(80,214,123,0.12)] hover:text-[#0f3d20]"
+                }`}
               >
-                <HiOutlineMail /> Mail
+                <HiOutlineMail className="h-4 w-4 shrink-0" /> Mail
               </button>
             </div>
           )}
         </div>
-        {/* Panels */}
 
         {openPanel === "history" && (
           <HistoryPanel

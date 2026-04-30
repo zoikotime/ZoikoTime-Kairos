@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useStore } from "../../store/useStore";
 import toast from "react-hot-toast";
 
-export default function MailResponse() {
+export default function MailResponse({ theme }) {
+  const isDark = theme === "dark";
   const user = useStore((state) => state.user);
   const messages = useStore((state) => state.messages);
   const appendMessage = useStore((state) => state.appendMessage);
@@ -90,20 +91,38 @@ ${chatHistory}
 
   if (emailSent) {
     return (
-      <div className="space-y-2 text-sm text-center p-4 rounded-xl border border-green-300">
+      <div
+        className={`space-y-2 text-sm text-center p-4 rounded-xl border ${
+          isDark
+            ? "border-[rgba(80,214,123,0.2)] bg-[rgba(10,30,15,0.6)]"
+            : "border-[rgba(34,197,94,0.3)] bg-[rgba(240,253,244,0.8)]"
+        }`}
+      >
         <div className="text-2xl">✅</div>
-        <div className="font-semibold text-green-600">
+        <div
+          className={`font-semibold ${
+            isDark ? "text-[#4ade80]" : "text-[#16a34a]"
+          }`}
+        >
           Mail Sent Successfully!
         </div>
-        <p className="text-green-600 text-xs">
+        <p
+          className={`text-xs ${isDark ? "text-[#4ade80]" : "text-[#16a34a]"}`}
+        >
           Our team will get back to you shortly.
         </p>
-        <p className="text-gray-500 text-xs">
+        <p
+          className={`text-xs ${isDark ? "text-[#789483]" : "text-[#64748b]"}`}
+        >
           Have more questions? Feel free to ask below!
         </p>
         <button
           onClick={() => setEmailSent(false)}
-          className="mt-2 text-xs text-blue-500 underline"
+          className={`mt-2 text-xs underline transition-colors ${
+            isDark
+              ? "text-[#38bdf8] hover:text-[#7dd3fc]"
+              : "text-[#2563eb] hover:text-[#1d4ed8]"
+          }`}
         >
           Send another mail
         </button>
@@ -111,29 +130,43 @@ ${chatHistory}
     );
   }
 
+  const inputClass = `w-full border rounded p-2 text-sm outline-none transition-all ${
+    isDark
+      ? "border-[rgba(80,214,123,0.18)] bg-[rgba(7,20,10,0.7)] text-[#cde8d4] placeholder-[#4a6b52] focus:border-[rgba(80,214,123,0.45)]"
+      : "border-[rgba(31,154,70,0.25)] bg-white text-[#0f3d20] placeholder-[#94a3b8] focus:border-[rgba(31,154,70,0.5)]"
+  }`;
+
+  const disabledInputClass = `w-full border rounded p-2 text-sm cursor-not-allowed ${
+    isDark
+      ? "border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] text-[#4a6b52]"
+      : "border-[rgba(31,154,70,0.15)] bg-[rgba(31,154,70,0.04)] text-[#6b8f74]"
+  }`;
+
   return (
     <div className="space-y-2 text-sm">
-      <div className="font-semibold">📩 Send Support Mail</div>
+      <div
+        className={`font-semibold ${
+          isDark ? "text-[#d4f0dc]" : "text-[#0f3d20]"
+        }`}
+      >
+        📩 Send Support Mail
+      </div>
 
       {/* Name */}
-      <input
-        value={user?.name || ""}
-        disabled
-        className="w-full border p-2 rounded"
-      />
+      <input value={user?.name || ""} disabled className={disabledInputClass} />
 
       {/* From */}
       <input
         value={user?.email || ""}
         disabled
-        className="w-full border p-2 rounded"
+        className={disabledInputClass}
         placeholder="from"
       />
 
       {/* To */}
       <input
         value={toEmail}
-        className="w-full border p-2 rounded"
+        className={disabledInputClass}
         placeholder="to"
         disabled
         hidden
@@ -144,7 +177,7 @@ ${chatHistory}
         value={subject}
         onChange={(e) => setSubject(e.target.value)}
         placeholder="Issue"
-        className="w-full border p-2 rounded"
+        className={inputClass}
         required
       />
 
@@ -153,17 +186,19 @@ ${chatHistory}
         value={body}
         onChange={(e) => setBody(e.target.value)}
         placeholder="Describe issue..."
-        className="w-full border p-2 rounded h-20"
+        className={`${inputClass} h-20 resize-none`}
       />
 
       {/* ✅ Send Button with Loader */}
       <button
         onClick={handleSend}
         disabled={sending}
-        className={`flex items-center gap-2 px-3 py-1 rounded text-white text-sm font-medium transition-all ${
+        className={`flex items-center gap-2 px-3 py-1.5 rounded text-white text-sm font-medium transition-all ${
           sending
-            ? "bg-green-400 cursor-not-allowed"
-            : "bg-green-500 hover:bg-green-600"
+            ? "bg-[#4ade80] cursor-not-allowed"
+            : isDark
+              ? "bg-[#16a34a] hover:bg-[#15803d]"
+              : "bg-[#22c55e] hover:bg-[#16a34a]"
         }`}
       >
         {sending ? (

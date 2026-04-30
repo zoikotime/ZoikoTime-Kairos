@@ -30,8 +30,15 @@ export default function LangPanel({ current, onChange, onClose, theme }) {
         <span className="text-[0.65rem] font-black uppercase tracking-widest text-[#44d66f]">
           Language
         </span>
-        <button onClick={onClose} className="orbit-icon-button h-7 w-7 rounded-[10px]">
-          <HiOutlineXMark className="h-3.5 w-3.5" />
+        <button
+          onClick={onClose}
+          className={`orbit-icon-button h-7 w-7 rounded-[10px] flex items-center justify-center border transition-all ${
+            isDark
+              ? "border-[rgba(255,255,255,0.07)] text-[#7ecf9a] hover:border-[rgba(80,214,123,0.4)] hover:bg-[rgba(15,51,27,0.8)]"
+              : "border-[rgba(31,154,70,0.2)] text-[#2d8a4e] hover:border-[rgba(31,154,70,0.45)] hover:bg-[rgba(80,214,123,0.1)]"
+          }`}
+        >
+          <HiOutlineXMark className="h-4 w-4 hover:text-red-500" />
         </button>
       </div>
       <div className="p-2">

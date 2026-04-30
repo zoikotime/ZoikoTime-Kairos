@@ -12,15 +12,14 @@ export default function MessageBubble({ msg, onSuggestion, theme }) {
     >
       {/* Bot avatar */}
       {!isUser && (
-        <div className="flex-shrink-0 mt-0.5">
-          <div className="orbit-avatar-shell h-8 w-8 rounded-[13px]">
-            <div className="orbit-avatar h-7 w-7 rounded-[10px] flex items-center justify-center">
-              <span className="orbit-avatar-z text-[0.72rem] font-black text-[#1d4e61]">
-                K
-              </span>
-            </div>
-          </div>
-        </div>
+        <div className="relative h-8 w-8">
+  <div className="h-8 w-8 rounded-full bg-[#e6f4f7] flex items-center justify-center">
+    <span className="text-[0.72rem] font-semibold text-[#1d4e61]">
+      <img src="./response-icon.png" alt="" />
+    </span>
+  </div>
+
+</div>
       )}
 
       <div

@@ -52,7 +52,7 @@ export default function Composer({ input, setInput, isTyping, onSend, onClear, t
               : "text-[#1a7a38] hover:bg-[rgba(80,214,123,0.12)]"
           }`}
         >
-          <HiOutlineTrash className="h-4 w-4" />
+          <HiOutlineTrash className="h-4 w-4 hover:text-red-500" />
         </button>
 
         <button
