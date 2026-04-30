@@ -10,8 +10,11 @@ const {
   saveMessage,
 } = require("../services/chatService");
 
+// 🔥 MAIN CHAT FUNCTION
 async function sendChatMessage(req, res, next) {
   try {
+    console.log("📥 Incoming request body:", req.body);
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -20,18 +23,53 @@ async function sendChatMessage(req, res, next) {
       });
     }
 
-    const { sessionId, message, user, language = "en" } = req.body;
+    let { sessionId, message, user, language = "en" } = req.body;
 
+    // ✅ prevent empty messages
+    if (!message || !message.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Message cannot be empty",
+      });
+    }
+
+    // ✅ fallback language
+    if (!["en", "hi"].includes(language)) {
+      console.log("⚠️ Invalid language:", language);
+      language = "en";
+    }
+
+    // 🔥 CREATE SESSION ONLY WHEN FIRST MESSAGE COMES
+    if (!sessionId) {
+      const session = await createConversationForUser(user);
+      sessionId = session.sessionId;
+      console.log("🆕 Created new session:", sessionId);
+    }
+
+    // ✅ SAVE USER MESSAGE
     await saveMessage({
       sessionId,
       user,
       userEmail: user?.email || "unknown@local",
       role: "user",
-      content: message,
+      content: message.trim(),
     });
 
-    const reply = generateChatReply(message, language);
+    // ✅ GENERATE BOT REPLY (safe)
+    let reply;
+    try {
+      reply = generateChatReply(message, language);
+    } catch (err) {
+      console.error("❌ Reply generation failed:", err);
+      reply = {
+        answer: "Sorry, something went wrong.",
+        suggestions: [],
+      };
+    }
 
+    console.log("🤖 Generated reply:", reply);
+
+    // ✅ SAVE ASSISTANT MESSAGE
     await saveMessage({
       sessionId,
       user,
@@ -45,15 +83,19 @@ async function sendChatMessage(req, res, next) {
       },
     });
 
+    // ✅ RETURN RESPONSE
     return res.json({
       success: true,
+      sessionId,
       message: reply,
     });
   } catch (error) {
+    console.error("❌ ERROR in sendChatMessage:", error);
     next(error);
   }
 }
 
+// 🔹 GET CHAT HISTORY
 async function getChatHistory(req, res, next) {
   try {
     const messages = await getSessionHistory(req.params.sessionId);
@@ -78,6 +120,7 @@ async function getChatHistory(req, res, next) {
   }
 }
 
+// 🔹 GET UI CONTEXT
 function getChatUiContext(_req, res, next) {
   try {
     return res.json({
@@ -89,6 +132,7 @@ function getChatUiContext(_req, res, next) {
   }
 }
 
+// 🔹 GET USER SESSIONS
 async function getUserSessions(req, res, next) {
   try {
     const email = (req.query.email || "").toLowerCase().trim();
@@ -106,6 +150,7 @@ async function getUserSessions(req, res, next) {
   }
 }
 
+// 🔹 CREATE SESSION (optional endpoint)
 async function createSession(req, res, next) {
   try {
     const { user } = req.body;
@@ -126,16 +171,21 @@ async function createSession(req, res, next) {
   }
 }
 
+// 🔹 END SESSION
 async function closeSession(req, res, next) {
   try {
     const { userEmail } = req.body;
-    await endConversation(req.params.sessionId, userEmail?.toLowerCase().trim());
+    await endConversation(
+      req.params.sessionId,
+      userEmail?.toLowerCase().trim()
+    );
     return res.json({ success: true });
   } catch (error) {
     next(error);
   }
 }
 
+// 🔹 DELETE SESSION
 async function removeSession(req, res, next) {
   try {
     const userEmail = (req.query.userEmail || "").toLowerCase().trim();

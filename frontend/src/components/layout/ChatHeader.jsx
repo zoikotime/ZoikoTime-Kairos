@@ -86,7 +86,7 @@ export default function ChatHeader({
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            console.log("history");
+           
 
             onTogglePanel("history");
           }}
@@ -104,7 +104,6 @@ export default function ChatHeader({
         <button
           type="button"
           onClick={(e) => {
-            console.log("lang");
             e.stopPropagation();
             onTogglePanel("lang");
           }}
@@ -141,7 +140,7 @@ export default function ChatHeader({
               <button
                 type="button"
                 onClick={(e) => {
-                  console.log("CLICKED EDIT");
+                 
                   e.preventDefault();
                   e.stopPropagation();
                   setActionOpen(false);

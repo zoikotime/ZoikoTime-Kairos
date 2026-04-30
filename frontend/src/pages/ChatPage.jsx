@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useStore } from "../store/useStore";
 import {
-  createChatSession,
   endChatSession,
   fetchHistory,
   fetchUserSessions,
@@ -91,10 +90,13 @@ export default function ChatPage() {
       .catch(() => {});
   }, [setSessions, user?.email, sessionId]);
 
+  // 🔥 FIXED SEND MESSAGE
   const sendMessage = useCallback(
     async (overrideText) => {
       const text = (overrideText ?? input).trim();
-      if (!text || isTyping || !sessionId) return;
+      if (!text || isTyping) return;
+
+      let currentSessionId = sessionId;
 
       const nextMessages = [
         ...messages,
@@ -111,11 +113,17 @@ export default function ChatPage() {
 
       try {
         const response = await sendChatMessage({
-          sessionId,
+          sessionId: currentSessionId || null,
           message: text,
           user,
           language: lang,
         });
+
+        // ✅ SET SESSION FROM BACKEND
+        if (!currentSessionId && response.sessionId) {
+          await setSessionId(response.sessionId);
+          currentSessionId = response.sessionId;
+        }
 
         replaceMessages([
           ...nextMessages,
@@ -130,7 +138,8 @@ export default function ChatPage() {
           }),
         ]);
       } catch {
-        toast.error("Couldn't reach Kioris. Check your connection.");
+        toast.error("Couldn't reach Koiris. Check your connection.");
+
         replaceMessages([
           ...nextMessages,
           normalizeMessage({
@@ -145,7 +154,16 @@ export default function ChatPage() {
         setIsTyping(false);
       }
     },
-    [input, isTyping, lang, messages, replaceMessages, sessionId, user],
+    [
+      input,
+      isTyping,
+      lang,
+      messages,
+      replaceMessages,
+      sessionId,
+      user,
+      setSessionId,
+    ],
   );
 
   const refreshSessions = useCallback(async () => {
@@ -155,7 +173,6 @@ export default function ChatPage() {
   }, [setSessions, user?.email]);
 
   const handleMailClick = useCallback(() => {
-    console.log("MAIL CLICKED");
     replaceMessages([
       ...messages,
       {
@@ -167,32 +184,21 @@ export default function ChatPage() {
   }, [messages, replaceMessages]);
 
   const handleNewChat = useCallback(async () => {
-    if (!user?.email) return;
-
-    try {
-      if (sessionId) {
-        await endChatSession(sessionId, user.email).catch(() => {});
-      }
-
-      const response = await createChatSession(user);
-      const nextSessionId = response.session?.sessionId;
-      if (!nextSessionId) {
-        throw new Error("Missing session");
-      }
-
-      await setSessionId(nextSessionId, response.session.expiresAt || null);
-      replaceMessages([
-        createWelcomeMessage(
-          "Starting a new conversation. What can I help you with?",
-        ),
-      ]);
-      setInput("");
-      setOpenPanel(null);
-      await refreshSessions();
-    } catch {
-      toast.error("Couldn't start a new conversation right now.");
+    if (sessionId) {
+      await endChatSession(sessionId, user.email).catch(() => {});
     }
-  }, [refreshSessions, replaceMessages, sessionId, setSessionId, user]);
+
+    await setSessionId(null);
+
+    replaceMessages([
+      createWelcomeMessage(
+        "Starting a new conversation. What can I help you with?",
+      ),
+    ]);
+
+    setInput("");
+    setOpenPanel(null);
+  }, [sessionId, user, replaceMessages, setSessionId]);
 
   const handleSelectSession = useCallback(
     async (session) => {
@@ -222,47 +228,16 @@ export default function ChatPage() {
 
   return (
     <>
-      <style>{`
-        @keyframes msgIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes panelIn { from { opacity: 0; transform: translateY(-8px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        @keyframes livePulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(87, 210, 117, 0.55); }
-          50% { box-shadow: 0 0 0 5px rgba(87, 210, 117, 0); }
-        }
-        .live-dot { animation: livePulse 2.2s ease infinite; }
-      `}</style>
+      {/* 🔥 YOUR ORIGINAL UI RESTORED */}
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-full max-w-2xl flex flex-col h-[90vh] border rounded-xl overflow-hidden">
 
-      <div
-        className={`min-h-screen flex items-center justify-center p-3 sm:p-5 transition-colors duration-300 ${
-          isDark ? "" : "bg-[#f3fff5]"
-        }`}
-        style={
-          isDark
-            ? {
-                background:
-                  "radial-gradient(circle at top, rgba(76,214,120,0.18), transparent 28%), linear-gradient(180deg, #010403 0%, #07100a 46%, #0b1710 100%)",
-              }
-            : {
-                background:
-                  "radial-gradient(circle at top, rgba(76,214,120,0.16), transparent 35%), linear-gradient(180deg, #f4fff7 0%, #ffffff 50%, #eefcf0 100%)",
-              }
-        }
-      >
-        <div
-          className={`relative flex w-full max-w-2xl flex-col overflow-hidden rounded-[26px] border shadow-2xl transition-colors duration-300 ${
-            isDark
-              ? "border-[rgba(76,214,120,0.2)] bg-[rgba(2,7,4,0.96)] shadow-[0_48px_120px_rgba(0,0,0,0.62)]"
-              : "border-[rgba(76,214,120,0.24)] bg-white shadow-[0_32px_80px_rgba(76,214,120,0.12)]"
-          }`}
-          style={{ minHeight: "min(88vh,780px)", maxHeight: "min(92vh,820px)" }}
-        >
           <ChatHeader
             theme={theme}
             onToggleTheme={toggleTheme}
             lang={lang}
             onLangChange={setLang}
             openPanel={openPanel}
-            
             onTogglePanel={(panel) =>
               setOpenPanel((prev) => (prev === panel ? null : panel))
             }
@@ -273,13 +248,7 @@ export default function ChatPage() {
             onMailClick={handleMailClick}
           />
 
-          <div
-            className="flex-1 overflow-y-auto px-4 py-5 sm:px-5"
-            style={{
-              scrollbarWidth: "thin",
-              scrollbarColor: "rgba(80,214,123,0.13) transparent",
-            }}
-          >
+          <div className="flex-1 overflow-y-auto p-4">
             {messages.map((message) => (
               <MessageBubble
                 key={message.id}
@@ -289,30 +258,7 @@ export default function ChatPage() {
               />
             ))}
 
-            {isTyping ? (
-              <div
-                className="mb-4 flex items-start gap-2.5"
-                style={{ animation: "msgIn 0.2s ease both" }}
-              >
-                <div className="orbit-avatar-shell mt-0.5 h-8 w-8 rounded-[13px]">
-                  <div className="orbit-avatar flex h-7 w-7 items-center justify-center rounded-[10px]">
-                    <span className="orbit-avatar-z text-[0.72rem] font-black text-[#1d4e61]">
-                      K
-                    </span>
-                  </div>
-                </div>
-                <div
-                  className={`rounded-2xl rounded-tl-sm border px-4 py-3 ${
-                    isDark
-                      ? "border-[rgba(80,214,123,0.12)] bg-[rgba(8,26,12,0.9)]"
-                      : "border-[rgba(80,214,123,0.2)] bg-white shadow-sm"
-                  }`}
-                >
-                  <TypingDots />
-                </div>
-              </div>
-            ) : null}
-
+            {isTyping && <TypingDots />}
             <div ref={bottomRef} />
           </div>
 

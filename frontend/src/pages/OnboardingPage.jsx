@@ -52,13 +52,17 @@ export default function OnboardingPage() {
     }
   }, [onboardingDraft]);
 
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      saveOnboardingDraft(formData);
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [formData]);
+
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setFormData((current) => {
-      const next = { ...current, [name]: value };
-      saveOnboardingDraft(next);
-      return next;
-    });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (event) => {

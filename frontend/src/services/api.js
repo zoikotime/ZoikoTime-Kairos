@@ -5,14 +5,16 @@ const api = axios.create({
   timeout: 10000,
 });
 
+// AUTH
 export async function verifyUser(payload) {
   const { data } = await api.post("/auth/verify", payload);
   return data;
 }
 
+// CHAT (🔥 MAIN FLOW)
 export async function sendMessage(payload) {
   const { data } = await api.post("/chat", payload);
-  return data;
+  return data; // will now return sessionId also
 }
 
 export async function fetchHistory(sessionId) {
@@ -20,25 +22,31 @@ export async function fetchHistory(sessionId) {
   return data;
 }
 
-export async function fetchChatContext() {
-  const { data } = await api.get("/chat/context");
-  return data;
-}
-
 export async function fetchUserSessions(email) {
   const { data } = await api.get("/chat/sessions", {
     params: { email },
   });
-  return data;
+
+  // 🔥 EXTRA SAFETY (frontend filter)
+  return {
+    ...data,
+    sessions: (data.sessions || []).filter(
+      (s) => s.messageCount > 0 // or s.messages?.length > 0
+    ),
+  };
 }
 
-export async function createChatSession(user) {
-  const { data } = await api.post("/chat/sessions", { user });
-  return data;
-}
+// ❌ REMOVE THIS COMPLETELY
+// export async function createChatSession(user) {
+//   const { data } = await api.post("/chat/sessions", { user });
+//   return data;
+// }
 
+// SESSION MANAGEMENT (keep these)
 export async function endChatSession(sessionId, userEmail) {
-  const { data } = await api.patch(`/chat/sessions/${sessionId}/end`, { userEmail });
+  const { data } = await api.patch(`/chat/sessions/${sessionId}/end`, {
+    userEmail,
+  });
   return data;
 }
 
