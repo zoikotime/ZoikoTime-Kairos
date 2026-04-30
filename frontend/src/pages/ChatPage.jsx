@@ -262,8 +262,9 @@ export default function ChatPage() {
             lang={lang}
             onLangChange={setLang}
             openPanel={openPanel}
-            onTogglePanel={(name) =>
-              setOpenPanel((current) => (current === name ? null : name))
+            
+            onTogglePanel={(panel) =>
+              setOpenPanel((prev) => (prev === panel ? null : panel))
             }
             onClosePanel={() => setOpenPanel(null)}
             sessions={sessions}

@@ -24,13 +24,19 @@ const defaultAssistantContext = {
   retentionHours: 24,
 };
 
-function getWelcomeContent(language, assistantContext = defaultAssistantContext) {
+function getWelcomeContent(
+  language,
+  assistantContext = defaultAssistantContext,
+) {
   return language === "hi"
     ? assistantContext.welcomeMessageHi || assistantContext.welcomeMessage
     : assistantContext.welcomeMessage;
 }
 
-function createWelcomeMessage(language, assistantContext = defaultAssistantContext) {
+function createWelcomeMessage(
+  language,
+  assistantContext = defaultAssistantContext,
+) {
   return [
     {
       id: "welcome",
@@ -45,6 +51,10 @@ export const useStore = create((set, get) => ({
   user: null,
   sessionId: null,
   expiresAt: null,
+
+  // ✅ NEW (EDIT MODE)
+  isEditing: false,
+
   assistantContext: defaultAssistantContext,
   sessions: [],
   onboardingDraft: loadDraft(),
@@ -54,7 +64,13 @@ export const useStore = create((set, get) => ({
   language: "en",
   theme: "dark",
   historyOpen: false,
+
+  // ✅ EDIT ACTIONS
+  startEditing: () => set({ isEditing: true, user: null }),
+  stopEditing: () => set({ isEditing: false }),
+
   setLoading: (loading) => set({ loading }),
+
   setAssistantContext: (assistantContext) =>
     set((state) => ({
       assistantContext,
@@ -63,7 +79,9 @@ export const useStore = create((set, get) => ({
           ? createWelcomeMessage(state.language, assistantContext)
           : state.messages,
     })),
+
   setSessions: (sessions) => set({ sessions }),
+
   setSessionId: async (sessionId, expiresAt = null) => {
     const current = get();
     if (current.user) {
@@ -75,9 +93,11 @@ export const useStore = create((set, get) => ({
     }
     set({ sessionId, expiresAt: expiresAt || current.expiresAt });
   },
+
   setUserSession: async (payload) => {
     await saveSession(payload);
     saveDraft(payload.user);
+
     set({
       user: payload.user,
       sessionId: payload.sessionId,
@@ -85,46 +105,60 @@ export const useStore = create((set, get) => ({
       onboardingDraft: payload.user,
       messages: createWelcomeMessage(get().language, get().assistantContext),
       hydrated: true,
+      isEditing: false, // ✅ reset edit mode here
     });
   },
+
   hydrateSession: async () => {
     if (get().hydrated) return;
-    const session = await loadSession();
-    const prefs = loadPrefs();
-    const language = prefs?.language || "en";
 
-    if (!session) {
+    try {
+      const session = await loadSession();
+      const prefs = loadPrefs();
+
+      const language = prefs?.language || "en";
+      const theme = prefs?.theme || "dark";
+
+      if (!session) {
+        set({
+          hydrated: true,
+          language,
+          theme,
+          onboardingDraft: loadDraft(),
+          messages: createWelcomeMessage(language, get().assistantContext),
+        });
+        return;
+      }
+
       set({
-        hydrated: true,
+        user: session.user,
+        sessionId: session.sessionId,
+        expiresAt: session.expiresAt || null,
         language,
-        theme: prefs?.theme || "dark",
-        onboardingDraft: loadDraft(),
+        theme,
+        onboardingDraft: loadDraft() || session.user,
+        hydrated: true,
         messages: createWelcomeMessage(language, get().assistantContext),
       });
-      return;
+    } catch (err) {
+      console.error("Session hydration failed:", err);
+      set({ hydrated: true });
     }
-
-    set({
-      user: session.user,
-      sessionId: session.sessionId,
-      expiresAt: session.expiresAt || null,
-      language,
-      theme: prefs?.theme || "dark",
-      onboardingDraft: loadDraft() || session.user,
-      hydrated: true,
-      messages: createWelcomeMessage(language, get().assistantContext),
-    });
   },
+
   appendMessage: (message) =>
     set((state) => ({
       messages: [...state.messages, message],
     })),
+
   replaceMessages: (messages) => set({ messages }),
+
   setLanguage: (language) => {
     savePrefs({
       language,
       theme: get().theme,
     });
+
     set((state) => ({
       language,
       messages:
@@ -133,35 +167,46 @@ export const useStore = create((set, get) => ({
           : state.messages,
     }));
   },
+
   toggleTheme: () => {
     const nextTheme = get().theme === "dark" ? "light" : "dark";
+
     savePrefs({
       language: get().language,
       theme: nextTheme,
     });
+
     set({ theme: nextTheme });
   },
+
   saveOnboardingDraft: (draft) => {
     saveDraft(draft);
     set({ onboardingDraft: draft });
   },
+
   clearOnboardingDraft: () => {
     clearDraft();
     set({ onboardingDraft: null });
   },
+
   toggleHistory: () => set((state) => ({ historyOpen: !state.historyOpen })),
+
   closeHistory: () => set({ historyOpen: false }),
+
   logout: async () => {
     if (get().user) {
       saveDraft(get().user);
     }
+
     await clearSession();
+
     set({
       user: null,
       sessionId: null,
       expiresAt: null,
       messages: createWelcomeMessage(get().language, get().assistantContext),
       hydrated: true,
+      isEditing: false,
     });
   },
 }));
