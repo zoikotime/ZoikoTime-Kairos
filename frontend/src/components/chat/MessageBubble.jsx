@@ -1,9 +1,91 @@
+import { useEffect, useRef, useState } from "react";
 import TypingDots from "./TypingDots";
 
-export default function MessageBubble({ msg, onSuggestion, theme }) {
+// Module-level set — persists across re-renders, tracks already-animated message IDs
+const animatedIds = new Set();
+
+export default function MessageBubble({ msg, onSuggestion, theme, isNew, bottomRef }) {
   const isUser = msg.role === "user";
   const isDark = theme === "dark";
   const body = msg.text ?? msg.content ?? "";
+  const isStringBody = typeof body === "string";
+
+  const shouldAnimate =
+    !isUser &&
+    isStringBody &&
+    !msg.typing &&
+    isNew &&
+    !animatedIds.has(msg.id);
+
+  const [displayed, setDisplayed] = useState(
+    shouldAnimate ? "" : isStringBody ? body : ""
+  );
+  const [animating, setAnimating] = useState(shouldAnimate);
+  const rafRef = useRef(null);
+
+  useEffect(() => {
+    if (!shouldAnimate) return;
+
+    animatedIds.add(msg.id);
+
+    const words = body.split(" ");
+    const totalWords = words.length;
+    const DURATION_MS = Math.min(3000, Math.max(400, totalWords * 55));
+    const intervalMs = DURATION_MS / totalWords;
+
+    let wordIndex = 0;
+    let lastTime = null;
+    let accumulated = 0;
+
+    function step(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      accumulated += timestamp - lastTime;
+      lastTime = timestamp;
+
+      const target = Math.min(totalWords, Math.floor(accumulated / intervalMs) + 1);
+
+      if (target > wordIndex) {
+        wordIndex = target;
+        setDisplayed(words.slice(0, wordIndex).join(" "));
+        bottomRef?.current?.scrollIntoView({ behavior: "smooth" });
+      }
+
+      if (wordIndex < totalWords) {
+        rafRef.current = requestAnimationFrame(step);
+      } else {
+        setDisplayed(body);
+        setAnimating(false);
+        bottomRef?.current?.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+
+    rafRef.current = requestAnimationFrame(step);
+
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const renderedBody = isStringBody ? (animating ? displayed : body) : body;
+
+  // Split on \n\n for paragraphs, then handle \n within each paragraph
+  function renderText(text) {
+    const paragraphs = text.split("\n\n");
+    return paragraphs.map((para, pi) => (
+      <span key={pi}>
+        {para.split("\n").map((line, li) => (
+          <span key={li}>
+            {line}
+            {li < para.split("\n").length - 1 && <br />}
+          </span>
+        ))}
+        {pi < paragraphs.length - 1 && (
+          <span style={{ display: "block", height: "0.85em" }} />
+        )}
+      </span>
+    ));
+  }
 
   return (
     <div
@@ -13,13 +95,12 @@ export default function MessageBubble({ msg, onSuggestion, theme }) {
       {/* Bot avatar */}
       {!isUser && (
         <div className="relative h-8 w-8">
-  <div className="h-8 w-8 rounded-full bg-[#e6f4f7] flex items-center justify-center">
-    <span className="text-[0.72rem] font-semibold text-[#1d4e61]">
-      <img src="./response-icon.png" alt="" />
-    </span>
-  </div>
-
-</div>
+          <div className="h-8 w-8 rounded-full bg-[#e6f4f7] flex items-center justify-center">
+            <span className="text-[0.72rem] font-semibold text-[#1d4e61]">
+              <img src="./response-icon.png" alt="" />
+            </span>
+          </div>
+        </div>
       )}
 
       <div
@@ -31,21 +112,23 @@ export default function MessageBubble({ msg, onSuggestion, theme }) {
             isUser
               ? "rounded-2xl rounded-tr-sm bg-gradient-to-br from-[#1ac7bf] to-[#57d995] px-4 py-2.5 text-[#042820] font-semibold text-sm shadow-lg"
               : isDark
-                ? "rounded-2xl rounded-tl-sm border border-[rgba(51,227,205,0.11)] bg-[rgba(7,26,38,0.85)] px-4 py-3 text-[#cde8f0] text-sm leading-relaxed shadow-md"
-                : "rounded-2xl rounded-tl-sm border border-[rgba(26,199,191,0.25)] bg-white px-4 py-3 text-[#103040] text-sm leading-relaxed shadow-md"
+                ? "rounded-2xl rounded-tl-sm border border-[rgba(51,227,205,0.11)] bg-[rgba(7,26,38,0.85)] px-4 py-3 text-[#cde8f0] text-sm shadow-md"
+                : "rounded-2xl rounded-tl-sm border border-[rgba(26,199,191,0.25)] bg-white px-4 py-3 text-[#103040] text-sm shadow-md"
           }
         >
           {msg.typing ? (
             <TypingDots />
-          ) : typeof body === "string" ? (
-            <span className="whitespace-pre-wrap">{body}</span>
+          ) : isStringBody ? (
+            <span style={{ lineHeight: "1.45", display: "block" }}>
+              {renderText(renderedBody)}
+            </span>
           ) : (
             body
           )}
         </div>
 
-        {/* Citations */}
-        {!isUser && !msg.typing && msg.citations?.length > 0 && (
+        {/* Citations — appear after animation finishes */}
+        {!isUser && !msg.typing && !animating && msg.citations?.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-0.5">
             {msg.citations.map((c, i) => (
               <span
@@ -62,8 +145,8 @@ export default function MessageBubble({ msg, onSuggestion, theme }) {
           </div>
         )}
 
-        {/* Quick reply chips */}
-        {!isUser && !msg.typing && msg.suggestions?.length > 0 && (
+        {/* Quick reply chips — appear after animation finishes */}
+        {!isUser && !msg.typing && !animating && msg.suggestions?.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {msg.suggestions.map((s, i) => (
               <button
@@ -92,7 +175,7 @@ export default function MessageBubble({ msg, onSuggestion, theme }) {
                 : "border border-[rgba(26,199,191,0.3)] bg-[rgba(26,199,191,0.1)] text-[#1a7a75]"
             }`}
           >
-            U
+            I
           </div>
         </div>
       )}

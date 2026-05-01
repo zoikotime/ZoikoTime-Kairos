@@ -61,6 +61,7 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [openPanel, setOpenPanel] = useState(null);
+  const [latestBotId, setLatestBotId] = useState(null);
 
   const bottomRef = useRef(null);
   const isDark = theme === "dark";
@@ -75,6 +76,7 @@ export default function ChatPage() {
     fetchHistory(sessionId)
       .then((response) => {
         const historyMessages = (response.messages || []).map(normalizeMessage);
+        setLatestBotId(null);
         replaceMessages(
           historyMessages.length ? historyMessages : [createWelcomeMessage()],
         );
@@ -90,7 +92,6 @@ export default function ChatPage() {
       .catch(() => {});
   }, [setSessions, user?.email, sessionId]);
 
-  // 🔥 FIXED SEND MESSAGE
   const sendMessage = useCallback(
     async (overrideText) => {
       const text = (overrideText ?? input).trim();
@@ -119,37 +120,36 @@ export default function ChatPage() {
           language: lang,
         });
 
-        // ✅ SET SESSION FROM BACKEND
         if (!currentSessionId && response.sessionId) {
           await setSessionId(response.sessionId);
           currentSessionId = response.sessionId;
         }
 
-        replaceMessages([
-          ...nextMessages,
-          normalizeMessage({
-            id: `${Date.now()}-assistant`,
-            role: "assistant",
-            content:
-              response.message?.answer ||
-              "I'm here to help. Could you clarify what you need?",
-            suggestions: response.message?.suggestions || [],
-            nextAction: response.message?.nextAction || null,
-          }),
-        ]);
+        const botMsg = normalizeMessage({
+          id: `${Date.now()}-assistant`,
+          role: "assistant",
+          content:
+            response.message?.answer ||
+            "I'm here to help. Could you clarify what you need?",
+          suggestions: response.message?.suggestions || [],
+          nextAction: response.message?.nextAction || null,
+        });
+
+        setLatestBotId(botMsg.id);
+        replaceMessages([...nextMessages, botMsg]);
       } catch {
         toast.error("Couldn't reach Koiris. Check your connection.");
 
-        replaceMessages([
-          ...nextMessages,
-          normalizeMessage({
-            id: `${Date.now()}-error`,
-            role: "assistant",
-            content:
-              "I couldn't connect to the server right now.\n\nPlease try again, or contact support:\nEmail: sales@zoikotime.com\nPhone: 1-800-484-5574",
-            suggestions: ["Try again", "Speak to a human agent"],
-          }),
-        ]);
+        const errMsg = normalizeMessage({
+          id: `${Date.now()}-error`,
+          role: "assistant",
+          content:
+            "I couldn't connect to the server right now.\n\nPlease try again, or contact support:\nEmail: sales@zoikotime.com\nPhone: 1-800-484-5574",
+          suggestions: ["Try again", "Speak to a human agent"],
+        });
+
+        setLatestBotId(errMsg.id);
+        replaceMessages([...nextMessages, errMsg]);
       } finally {
         setIsTyping(false);
       }
@@ -172,16 +172,13 @@ export default function ChatPage() {
     setSessions(response.sessions || []);
   }, [setSessions, user?.email]);
 
-  // ✅ FIXED: closeMail reads latest messages from store via getState()
-  // replaceMessages does not support function updater — must pass array directly
   const handleMailClick = useCallback(() => {
     const alreadyOpen = messages.some((m) => m.isMail === true);
-    if (alreadyOpen) return; // ✅ prevent duplicate stacking
+    if (alreadyOpen) return;
 
     const mailId = `mail-${Date.now()}`;
 
     const closeMail = () => {
-      // ✅ getState() reads current store value at close time, avoiding stale closure
       const current = useStore.getState().messages;
       replaceMessages(current.filter((m) => m.id !== mailId));
     };
@@ -191,7 +188,7 @@ export default function ChatPage() {
       {
         id: mailId,
         role: "assistant",
-        isMail: true, // ✅ flag to prevent duplicates
+        isMail: true,
         content: <MailResponse theme={theme} onClose={closeMail} />,
       },
     ]);
@@ -203,6 +200,7 @@ export default function ChatPage() {
     }
 
     await setSessionId(null);
+    setLatestBotId(null);
 
     replaceMessages([
       createWelcomeMessage(
@@ -222,6 +220,7 @@ export default function ChatPage() {
         const response = await fetchHistory(session.sessionId);
         const historyMessages = (response.messages || []).map(normalizeMessage);
         await setSessionId(session.sessionId, session.expiresAt || null);
+        setLatestBotId(null);
         replaceMessages(
           historyMessages.length ? historyMessages : [createWelcomeMessage()],
         );
@@ -235,6 +234,7 @@ export default function ChatPage() {
   );
 
   const clearChat = useCallback(() => {
+    setLatestBotId(null);
     replaceMessages([
       createWelcomeMessage("Chat cleared. What can I help you with?"),
     ]);
@@ -280,6 +280,8 @@ export default function ChatPage() {
               msg={message}
               onSuggestion={sendMessage}
               theme={theme}
+              isNew={message.id === latestBotId}
+              bottomRef={bottomRef}
             />
           ))}
 

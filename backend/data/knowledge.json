@@ -308,7 +308,7 @@
         "check my status", "where do i see my work", "floating badge",
         "work timer screen", "today panel", "live work view"
       ],
-      "response": "🏠 Today — Your Live Dashboard\n\nThe Today screen is your main home view. Here's what you'll see:\n\nTop section:\n- ⏱️ Live Work Timer — counts up from your clock-in time\n- 🟡 Take a Break button\n- 🔴 Clock Out button\n\nStats cards:\n- Total Worked Hours\n- Active Time\n- Idle Time %\n- Productive Apps %\n\nClock-in and Clock-out times — your session start and end\n\nWork Authenticity — your session confidence score with Verified or Flagged status\n\nActivities chart — bar chart of your activity across the day\n\nTop Apps Today — apps you used most\n\nToday's Summary — final totals for Work Hours, Active Time, Break Time, Productive % and Status\n\nUse this screen first when you want to confirm whether your current session is active.",
+      "response": "🏠 Today — Your Live Dashboard\n\nThe Today screen is your main home view. Here's what you'll see:\n\nTop section:\n- ⏱️ Live Work Timer — counts up from your clock-in time\n- 🟡 Take a Break button\n- 🔴 Clock Out button\n\nStats cards:\n- Total Worked Hours\n- Active Time\n- Idle Time %\n- Productive Apps %\n\nClock-in and Clock-out times — your session start and end\n\nWork Authenticity — your session confidence score with Verified or Flagged status\n\nActivities chart — bar chart of your activity across the day\nTop Apps Today — apps you used most\n\nToday's Summary — final totals for Work Hours, Active Time, Break Time, Productive % and Status\nUse this screen first when you want to confirm whether your current session is active.",
       "route": "/today",
       "suggestions": [
         "What is the Live Work Timer?",
