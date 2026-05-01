@@ -1,0 +1,59 @@
+# ── Node modules (rebuilt inside Docker) ────────────────────────────────────
+node_modules
+frontend/node_modules
+backend/node_modules
+
+# ── Build artifacts ──────────────────────────────────────────────────────────
+frontend/dist
+frontend/.vite
+backend/dist
+
+# ── Electron-specific (not needed in Docker) ─────────────────────────────────
+frontend/electron
+frontend/electron-builder.yml
+frontend/electron-builder.json
+*.AppImage
+*.dmg
+*.exe
+*.deb
+*.rpm
+release/
+dist-electron/
+
+# ── Environment files (inject at runtime via Docker env vars) ────────────────
+.env
+.env.*
+!.env.example
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+
+# ── OS & editor noise ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# ── Git ──────────────────────────────────────────────────────────────────────
+.git
+.gitignore
+.gitattributes
+
+# ── Docker itself ────────────────────────────────────────────────────────────
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# ── Misc ─────────────────────────────────────────────────────────────────────
+README.md
+*.md
+.eslintrc*
+.prettierrc*
+coverage/
+.nyc_output/

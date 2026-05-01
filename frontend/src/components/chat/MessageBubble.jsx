@@ -4,21 +4,23 @@ import TypingDots from "./TypingDots";
 // Module-level set — persists across re-renders, tracks already-animated message IDs
 const animatedIds = new Set();
 
-export default function MessageBubble({ msg, onSuggestion, theme, isNew, bottomRef }) {
+export default function MessageBubble({
+  msg,
+  onSuggestion,
+  theme,
+  isNew,
+  bottomRef,
+}) {
   const isUser = msg.role === "user";
   const isDark = theme === "dark";
   const body = msg.text ?? msg.content ?? "";
   const isStringBody = typeof body === "string";
 
   const shouldAnimate =
-    !isUser &&
-    isStringBody &&
-    !msg.typing &&
-    isNew &&
-    !animatedIds.has(msg.id);
+    !isUser && isStringBody && !msg.typing && isNew && !animatedIds.has(msg.id);
 
   const [displayed, setDisplayed] = useState(
-    shouldAnimate ? "" : isStringBody ? body : ""
+    shouldAnimate ? "" : isStringBody ? body : "",
   );
   const [animating, setAnimating] = useState(shouldAnimate);
   const rafRef = useRef(null);
@@ -42,7 +44,10 @@ export default function MessageBubble({ msg, onSuggestion, theme, isNew, bottomR
       accumulated += timestamp - lastTime;
       lastTime = timestamp;
 
-      const target = Math.min(totalWords, Math.floor(accumulated / intervalMs) + 1);
+      const target = Math.min(
+        totalWords,
+        Math.floor(accumulated / intervalMs) + 1,
+      );
 
       if (target > wordIndex) {
         wordIndex = target;
@@ -146,36 +151,43 @@ export default function MessageBubble({ msg, onSuggestion, theme, isNew, bottomR
         )}
 
         {/* Quick reply chips — appear after animation finishes */}
-        {!isUser && !msg.typing && !animating && msg.suggestions?.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {msg.suggestions.map((s, i) => (
-              <button
-                key={i}
-                onClick={() => onSuggestion(s)}
-                className={`rounded-full border px-3 py-1 text-[0.71rem] font-medium transition-all active:scale-95 ${
-                  isDark
-                    ? "border-[rgba(51,227,205,0.2)] bg-[rgba(10,35,48,0.65)] text-[#6dddd0] hover:border-[#33e3cd] hover:bg-[rgba(18,52,62,0.9)] hover:text-[#33e3cd]"
-                    : "border-[rgba(26,199,191,0.35)] bg-[rgba(26,199,191,0.07)] text-[#1a9a92] hover:border-[#1ac7bf] hover:bg-[rgba(26,199,191,0.15)] hover:text-[#0e7a75]"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        )}
+        {!isUser &&
+          !msg.typing &&
+          !animating &&
+          msg.suggestions?.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {msg.suggestions.map((s, i) => (
+                <button
+                  key={i}
+                  onClick={() => onSuggestion(s)}
+                  className={`rounded-full border px-3 py-1 text-[0.71rem] font-medium transition-all active:scale-95 ${
+                    isDark
+                      ? "border-[rgba(51,227,205,0.2)] bg-[rgba(10,35,48,0.65)] text-[#6dddd0] hover:border-[#33e3cd] hover:bg-[rgba(18,52,62,0.9)] hover:text-[#33e3cd]"
+                      : "border-[rgba(26,199,191,0.35)] bg-[rgba(26,199,191,0.07)] text-[#1a9a92] hover:border-[#1ac7bf] hover:bg-[rgba(26,199,191,0.15)] hover:text-[#0e7a75]"
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
       </div>
 
       {/* User avatar */}
       {isUser && (
         <div className="flex-shrink-0 mt-0.5">
           <div
-            className={`h-8 w-8 rounded-[13px] flex items-center justify-center text-[0.68rem] font-bold ${
+            className={`h-8 w-8 rounded-[13px] flex items-center justify-center text-[0.68rem] font-bold bg-green-300 ${
               isDark
                 ? "border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.07)] text-[#8bc8d5]"
                 : "border border-[rgba(26,199,191,0.3)] bg-[rgba(26,199,191,0.1)] text-[#1a7a75]"
             }`}
           >
-            I
+            <img
+              src="/avatar.svg"
+              alt="User avatar"
+              className="h-full w-full object-contain"
+            />
           </div>
         </div>
       )}
