@@ -219,7 +219,7 @@ ${chatHistoryText}
         >
           Send another mail
         </button>
-        {/* ✅ Close button on success screen too */}
+        {/* ✅ Close button on success screen too */}{" "}
         {onClose && (
           <button
             onClick={onClose}

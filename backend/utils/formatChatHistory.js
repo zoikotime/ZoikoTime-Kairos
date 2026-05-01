@@ -3,30 +3,64 @@ function formatTime(date) {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-function formatChatHistory(messages, user, subject, description) { // 👈 added subject & description
+function extractDescription(raw = "") {
+  const match = raw.match(/User Description:\s*(.*?)(?:\n|$)/i);
+  return match ? match[1].trim() : raw;
+}
+
+function formatChatHistory(messages = [], user = {}, subject = "", description = "") {
+
+  const cleanDesc = extractDescription(description);
 
   const formattedMessages = messages
     .map((msg) => {
       const isUser = msg.role === "user";
+
       return `
-        <div style="display:flex; margin:10px 0; ${isUser ? "justify-content:flex-end;" : "justify-content:flex-start;"}">
+        <div style="
+          display:flex;
+          margin:4px 6px;
+          ${isUser ? "justify-content:flex-end;" : "justify-content:flex-start;"}
+        ">
           <div style="
-            max-width:75%;
-            padding:10px 14px;
-            border-radius:14px;
-            font-size:14px;
+            display:inline-block;
+            max-width:62%;
+            padding:8px 12px;
+            border-radius:${isUser ? "14px 14px 3px 14px" : "14px 14px 14px 3px"};
+            font-size:13px;
             line-height:1.5;
-            background:${isUser ? "#DCF8C6" : "#FFFFFF"};
-            border:1px solid ${isUser ? "#cdebb0" : "#e5e5e5"};
-            box-shadow:0 1px 2px rgba(0,0,0,0.05);
+            word-break:break-word;
+            background:${isUser ? "#d4f8c4" : "#ffffff"};
+            border:1px solid ${isUser ? "#c3e6aa" : "#e0e0e0"};
           ">
-            <div style="font-size:12px; font-weight:bold; margin-bottom:4px; color:${isUser ? "#075E54" : "#333"};">
-              ${isUser ? user.name || "User" : "Koiris (Bot)"}
+
+            <div style="
+              font-size:10.5px;
+              font-weight:bold;
+              margin-bottom:3px;
+              color:${isUser ? "#075E54" : "#444"};
+              text-align:${isUser ? "right" : "left"};
+            ">
+              ${isUser ? user.name || "User" : "Bot"}
             </div>
-            <div style="white-space:pre-wrap;">${msg.content}</div>
-            <div style="text-align:right; font-size:10px; color:#888; margin-top:6px;">
-              ${formatTime(msg.timestamp)}
+
+            <div style="white-space:pre-wrap; word-break:break-word;">
+              ${msg.content || ""}
             </div>
+
+            ${
+              msg.timestamp
+                ? `<div style="
+                    text-align:right;
+                    font-size:10px;
+                    color:#aaa;
+                    margin-top:4px;
+                  ">
+                    ${formatTime(msg.timestamp)}
+                  </div>`
+                : ""
+            }
+
           </div>
         </div>
       `;
@@ -34,32 +68,60 @@ function formatChatHistory(messages, user, subject, description) { // 👈 added
     .join("");
 
   return `
-    <div style="font-family:Arial, sans-serif; background:#f4f6f8; padding:20px;">
+  <div style="font-family:Arial, sans-serif; background:#f2f2f2; padding:30px;">
 
-      <!-- USER + ISSUE INFO -->
-      <div style="background:white; border-radius:12px; padding:16px; margin-bottom:16px; border:1px solid #e5e5e5;">
-        <h2 style="margin:0 0 10px; font-size:16px;">📩 Support Request</h2>
+    <div style="max-width:620px; margin:0 auto;">
 
-        <p style="margin:4px 0;"><b>Name:</b> ${user.name}</p>
-        <p style="margin:4px 0;"><b>Email:</b> ${user.email}</p>
-        <p style="margin:4px 0;"><b>Company:</b> ${user.company || "N/A"}</p>
-
-        <hr style="margin:12px 0; border:none; border-top:1px solid #e5e5e5;"/>
-
-        <!-- ✅ ISSUE & DESCRIPTION NOW VISIBLE -->
-        <p style="margin:4px 0;"><b>🔴 Issue:</b> ${subject || "N/A"}</p>
-        <p style="margin:4px 0;"><b>📝 Description:</b> ${description || "N/A"}</p>
+      <!-- HEADER -->
+      <div style="
+        background:#1fa855;
+        color:white;
+        padding:14px 16px;
+        border-radius:8px 8px 0 0;
+        font-size:16px;
+        font-weight:bold;
+      ">
+        ZoikoTime Support Request
       </div>
 
-      <!-- CHAT HISTORY -->
-      <div style="background:#e5ddd5; padding:12px; border-radius:12px;">
-        ${formattedMessages}
-      </div>
+      <!-- BODY -->
+      <div style="
+        background:white;
+        padding:18px;
+        border:1px solid #ddd;
+        border-top:none;
+        border-radius:0 0 8px 8px;
+      ">
 
-      <p style="text-align:center; margin-top:16px; font-size:11px; color:#888;">
-        This is an automated message from ZoikoTime Chatbot
-      </p>
+        <p><b>User:</b> ${user.name || "N/A"}</p>
+        <p><b>Email:</b> ${user.email || "N/A"}</p>
+
+        <hr style="margin:12px 0;" />
+
+        <p><b>Issue:</b></p>
+        <p>${subject || "N/A"}</p>
+
+        <p><b>Description:</b></p>
+        <p>${cleanDesc || "N/A"}</p>
+
+        <hr style="margin:12px 0;" />
+
+        <p><b>Chat Conversation:</b></p>
+
+        <!-- CHAT -->
+        <div style="
+          background:#e5ddd5;
+          padding:10px 6px;
+          border-radius:10px;
+          margin-top:8px;
+        ">
+          ${formattedMessages || "<p style='padding:0 10px;color:#666;'>No messages</p>"}
+        </div>
+
+      </div>
     </div>
+
+  </div>
   `;
 }
 
