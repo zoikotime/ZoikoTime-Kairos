@@ -172,13 +172,27 @@ export default function ChatPage() {
     setSessions(response.sessions || []);
   }, [setSessions, user?.email]);
 
+  // ✅ FIXED: closeMail reads latest messages from store via getState()
+  // replaceMessages does not support function updater — must pass array directly
   const handleMailClick = useCallback(() => {
+    const alreadyOpen = messages.some((m) => m.isMail === true);
+    if (alreadyOpen) return; // ✅ prevent duplicate stacking
+
+    const mailId = `mail-${Date.now()}`;
+
+    const closeMail = () => {
+      // ✅ getState() reads current store value at close time, avoiding stale closure
+      const current = useStore.getState().messages;
+      replaceMessages(current.filter((m) => m.id !== mailId));
+    };
+
     replaceMessages([
       ...messages,
       {
-        id: `mail-${Date.now()}`,
+        id: mailId,
         role: "assistant",
-        content: <MailResponse theme={theme} />,
+        isMail: true, // ✅ flag to prevent duplicates
+        content: <MailResponse theme={theme} onClose={closeMail} />,
       },
     ]);
   }, [messages, replaceMessages, theme]);

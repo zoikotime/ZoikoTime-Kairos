@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useStore } from "../../store/useStore";
 import toast from "react-hot-toast";
 
-export default function MailResponse({ theme }) {
+// ✅ FIXED: accepts onClose prop to allow dismissing the mail form
+export default function MailResponse({ theme, onClose }) {
   const isDark = theme === "dark";
   const user = useStore((state) => state.user);
   const messages = useStore((state) => state.messages);
@@ -14,7 +15,7 @@ export default function MailResponse({ theme }) {
   const fallbackIssue =
     messages
       .filter((m) => m.role === "user")
-      .slice(-1)
+      .slice(-1) // ✅ only last 1 user message
       .map((m) => (typeof m.content === "string" ? m.content : ""))
       .join(" ") || "";
 
@@ -218,6 +219,19 @@ ${chatHistoryText}
         >
           Send another mail
         </button>
+        {/* ✅ Close button on success screen too */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className={`mt-1 text-xs underline transition-colors ${
+              isDark
+                ? "text-[#789483] hover:text-[#a0b8a8]"
+                : "text-[#64748b] hover:text-[#334155]"
+            }`}
+          >
+            Back to chat
+          </button>
+        )}
       </div>
     );
   }
@@ -236,12 +250,31 @@ ${chatHistoryText}
 
   return (
     <div className="space-y-2 text-sm">
-      <div
-        className={`font-semibold ${
-          isDark ? "text-[#d4f0dc]" : "text-[#0f3d20]"
-        }`}
-      >
-        📩 Send Support Mail
+
+      {/* ✅ Header row with title and close button */}
+      <div className="flex items-center justify-between">
+        <div
+          className={`font-semibold ${
+            isDark ? "text-[#d4f0dc]" : "text-[#0f3d20]"
+          }`}
+        >
+          📩 Send Support Mail
+        </div>
+
+        {/* ✅ Close / cancel button — dismisses mail form and returns to chat */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            title="Close mail"
+            className={`text-xs px-2 py-0.5 rounded transition-colors ${
+              isDark
+                ? "text-[#789483] hover:text-[#cde8d4] hover:bg-[rgba(255,255,255,0.05)]"
+                : "text-[#64748b] hover:text-[#0f3d20] hover:bg-[rgba(31,154,70,0.08)]"
+            }`}
+          >
+            ✕ Cancel
+          </button>
+        )}
       </div>
 
       {/* Name */}
@@ -261,6 +294,7 @@ ${chatHistoryText}
         className={disabledInputClass}
         placeholder="to"
         disabled
+        hidden
       />
 
       {/* Subject */}
