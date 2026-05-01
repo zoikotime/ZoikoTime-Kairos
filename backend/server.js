@@ -37,6 +37,7 @@ app.use(
 
 app.use(helmet());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); 
 
 app.get("/health", (_req, res) => {
   res.json({ success: true, service: "zt-chatbot-server", status: "running" });

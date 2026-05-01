@@ -64,6 +64,8 @@ async function sendChatMessage(req, res, next) {
       reply = {
         answer: "Sorry, something went wrong.",
         suggestions: [],
+        route: null,
+        intent: "error",
       };
     }
 
@@ -80,6 +82,8 @@ async function sendChatMessage(req, res, next) {
         matchedQuestion: reply.matchedQuestion,
         confidence: reply.confidence,
         suggestions: reply.suggestions,
+        route: reply.route,    // ✅ FIX 4: persist route from knowledge.json
+        intent: reply.intent,  // ✅ FIX 4: persist intent id from knowledge.json
       },
     });
 

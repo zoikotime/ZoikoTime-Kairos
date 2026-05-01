@@ -107,22 +107,44 @@ const greetingIntent =
   intents[0] ||
   null;
 
+// ✅ FIX 3: Improved scoreEntry — rewards partial keyword phrase matches
 function scoreEntry(message, entry) {
   const messageText = normalizeText(message);
   const messageTokens = new Set(tokenize(message));
   let score = 0;
+
+  // Exact question match
   if (messageText.includes(normalizeText(entry.question))) score += 10;
+
   for (const keyword of entry.keywords) {
     const normalizedKeyword = normalizeText(keyword);
     if (!normalizedKeyword) continue;
-    if (messageText.includes(normalizedKeyword)) score += 5;
-    for (const token of tokenize(keyword)) {
+
+    // Full keyword phrase match
+    if (messageText.includes(normalizedKeyword)) {
+      score += 5;
+      continue;
+    }
+
+    // Partial: count how many tokens of the keyword appear in the message
+    const kwTokens = tokenize(keyword);
+    const matchedTokens = kwTokens.filter((t) => messageTokens.has(t));
+    if (kwTokens.length > 0) {
+      const ratio = matchedTokens.length / kwTokens.length;
+      if (ratio >= 0.5) score += ratio * 3.5; // partial phrase credit
+    }
+
+    // Individual token overlap
+    for (const token of kwTokens) {
       if (messageTokens.has(token)) score += 1.25;
     }
   }
+
+  // Question token overlap
   for (const token of tokenize(entry.question)) {
     if (messageTokens.has(token)) score += 0.85;
   }
+
   return score;
 }
 
@@ -136,6 +158,8 @@ function buildFallbackAnswer(language = "en") {
     matchedQuestion: "Fallback response",
     confidence: 0.24,
     suggestions: defaultSuggestions.slice(0, 3),
+    route: null,
+    intent: "fallback",
     timestamp: new Date().toISOString(),
   };
 }
@@ -407,6 +431,7 @@ async function listUserConversations(userEmail) {
   return memoryConversations;
 }
 
+// ✅ FIX 1 + FIX 2: Lower threshold to 1.5, return knowledge.json suggestions + route + intent
 function generateChatReply(message, language = "en") {
   const normalizedMessage = normalizeText(message);
   const emailManagerPrompt = knowledgeDocument.email_manager_prompt;
@@ -423,6 +448,8 @@ function generateChatReply(message, language = "en") {
       matchedQuestion: "Email manager",
       confidence: 0.98,
       suggestions: defaultSuggestions.slice(0, 3),
+      route: null,
+      intent: "email_manager",
       timestamp: new Date().toISOString(),
     };
   }
@@ -430,14 +457,29 @@ function generateChatReply(message, language = "en") {
     .map((entry) => ({ ...entry, score: scoreEntry(message, entry) }))
     .sort((a, b) => b.score - a.score);
   const bestMatch = ranked[0];
-  if (!bestMatch || bestMatch.score < 3) return buildFallbackAnswer(language);
+
+  // ✅ FIX 1: Lowered threshold from 3 → 1.5 so partial matches are used
+  if (!bestMatch || bestMatch.score < 1.5) return buildFallbackAnswer(language);
+
   const confidence = Math.min(0.99, Number((bestMatch.score / 16).toFixed(2)));
+
+  // ✅ FIX 2: Look up the original intent to get its suggestions array and route
+  const originalIntent = knowledgeDocument.intents.find(
+    (intent) =>
+      (intent.id || slugify(extractQuestion(intent))) === bestMatch.id,
+  );
+
   return {
     id: uuidv4(),
     answer: localizeAnswer(bestMatch, language),
     matchedQuestion: bestMatch.question,
     confidence,
-    suggestions: ranked.slice(1, 4).map((entry) => entry.question),
+    // Return knowledge.json suggestions if available, else fall back to ranked questions
+    suggestions: Array.isArray(originalIntent?.suggestions)
+      ? originalIntent.suggestions
+      : ranked.slice(1, 4).map((entry) => entry.question),
+    route: originalIntent?.route ?? null,   // ✅ pass route to frontend
+    intent: bestMatch.id,                   // ✅ pass intent id to frontend
     timestamp: new Date().toISOString(),
   };
 }

@@ -14,7 +14,7 @@ export default function MailResponse({ theme }) {
   const fallbackIssue =
     messages
       .filter((m) => m.role === "user")
-      .slice(-2)
+      .slice(-1)
       .map((m) => (typeof m.content === "string" ? m.content : ""))
       .join(" ") || "";
 
@@ -28,9 +28,15 @@ export default function MailResponse({ theme }) {
       return;
     }
 
-    setSending(true); // ✅ start loader
+    if (!subject.trim()) {
+      toast.error("Subject is required");
+      return;
+    }
 
-    const chatHistory = messages
+    setSending(true);
+
+    // 🔥 TEXT VERSION (unchanged fallback)
+    const chatHistoryText = messages
       .slice(-10)
       .map((m) => {
         if (typeof m.content !== "string") return null;
@@ -57,8 +63,83 @@ ${body}
 ----------------------
 
 Chat History:
-${chatHistory}
+${chatHistoryText}
 `;
+
+    // 🔥 PREMIUM HTML FORMAT (NEW)
+    const chatHistoryHtml = messages
+      .slice(-10)
+      .map((m) => {
+        if (typeof m.content !== "string") return "";
+
+        const isUser = m.role === "user";
+
+        return `
+        <div style="
+          display:flex;
+          justify-content:${isUser ? "flex-end" : "flex-start"};
+          margin:6px 0;
+        ">
+          <div style="
+            max-width:70%;
+            padding:10px 14px;
+            border-radius:16px;
+            font-size:13px;
+            line-height:1.4;
+            background:${isUser ? "#DCF8C6" : "#F1F0F0"};
+            color:#000;
+          ">
+            ${m.content}
+          </div>
+        </div>
+      `;
+      })
+      .join("");
+
+    const htmlTemplate = `
+  <div style="font-family: Arial; background:#f5f5f5; padding:20px;">
+    
+    <div style="
+      max-width:600px;
+      margin:auto;
+      background:#ffffff;
+      border-radius:10px;
+      overflow:hidden;
+      box-shadow:0 4px 12px rgba(0,0,0,0.1);
+    ">
+
+      <div style="background:#16a34a; color:#fff; padding:14px; font-weight:bold;">
+        ZoikoTime Support Request
+      </div>
+
+      <div style="padding:15px;">
+        <p><b>User:</b> ${user?.name}</p>
+        <p><b>Email:</b> ${user?.email}</p>
+
+        <hr/>
+
+        <p><b>Issue:</b></p>
+        <p>${subject}</p>
+
+        <p><b>Description:</b></p>
+        <p>${body || "N/A"}</p>
+
+        <hr/>
+
+        <p><b>Chat Conversation:</b></p>
+
+        <div style="
+          background:#e5ddd5;
+          padding:12px;
+          border-radius:10px;
+        ">
+          ${chatHistoryHtml}
+        </div>
+
+      </div>
+    </div>
+  </div>
+  `;
 
     try {
       const res = await fetch("http://localhost:5000/api/mail/send", {
@@ -67,10 +148,20 @@ ${chatHistory}
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          sessionId: useStore.getState().sessionId, // ✅ add this (safe access)
+
+          user: {
+            name: user?.name,
+            email: user?.email,
+            company: user?.company,
+          },
+
           from: user.email,
           to: toEmail,
           subject,
-          body: finalBody,
+
+          body: finalBody, // existing fallback text
+          html: htmlTemplate, // existing HTML template
         }),
       });
 
@@ -80,12 +171,13 @@ ${chatHistory}
         toast.success("Mail sent with chat history ✅");
         setEmailSent(true);
       } else {
-        toast.error("Failed to send, try again...");
+        toast.error(data.message || "Failed to send");
       }
     } catch (err) {
+      console.error(err);
       toast.error("Something went wrong, try again...");
     } finally {
-      setSending(false); // ✅ stop loader always
+      setSending(false);
     }
   };
 
@@ -169,7 +261,6 @@ ${chatHistory}
         className={disabledInputClass}
         placeholder="to"
         disabled
-        hidden
       />
 
       {/* Subject */}
