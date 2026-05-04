@@ -250,7 +250,6 @@ ${chatHistoryText}
 
   return (
     <div className="space-y-2 text-sm">
-
       {/* ✅ Header row with title and close button */}
       <div className="flex items-center justify-between">
         <div

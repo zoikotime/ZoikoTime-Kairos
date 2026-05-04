@@ -1,15 +1,58 @@
-const mongoose = require("mongoose");
+const { supabase } = require("../config/db");
 
-const escalationSchema = new mongoose.Schema(
-  {
-    sessionId: { type: String, required: true },
-    employeeEmail: { type: String, required: true },
-    managerEmail: { type: String, required: true },
-    subject: { type: String, required: true },
-    message: { type: String, required: true },
-    status: { type: String, default: "pending" },
+// Supabase table: escalations
+// Columns: id, session_id, employee_email, manager_email,
+//          subject, message, status, created_at, updated_at
+
+const Escalation = {
+  async create(data) {
+    const {
+      sessionId,
+      employeeEmail,
+      managerEmail,
+      subject,
+      message,
+      status = "pending",
+    } = data;
+
+    const { data: row, error } = await supabase
+      .from("escalations")
+      .insert([
+        {
+          session_id: sessionId,
+          employee_email: employeeEmail,
+          manager_email: managerEmail,
+          subject,
+          message,
+          status,
+        },
+      ])
+      .select()
+      .single();
+    if (error) throw error;
+    return row;
   },
-  { timestamps: true },
-);
 
-module.exports = mongoose.models.Escalation || mongoose.model("Escalation", escalationSchema);
+  async findBySessionId(sessionId) {
+    const { data, error } = await supabase
+      .from("escalations")
+      .select("*")
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+
+  async updateStatus(id, status) {
+    const { data, error } = await supabase
+      .from("escalations")
+      .update({ status })
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+};
+
+module.exports = Escalation;

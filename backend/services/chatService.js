@@ -1,12 +1,11 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { v4: uuidv4 } = require("uuid");
+const { Op } = require("sequelize");
 const Chat = require("../models/Chat");
 const Conversation = require("../models/Conversation");
 
 // FIXED: Point to correct knowledge.json location (root, not /data)
-// const knowledgePath = path.resolve(__dirname, "..", "data", "knowledge.json");
-// const knowledgeDocument = JSON.parse(fs.readFileSync(knowledgePath, "utf-8"));
 const knowledgePath = path.resolve(__dirname, "..", "data", "knowledge.json");
 let knowledgeDocument;
 try {
@@ -25,6 +24,7 @@ try {
     search_redirects: [],
   };
 }
+
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 
 const inMemoryHistory = new Map();
@@ -107,40 +107,34 @@ const greetingIntent =
   intents[0] ||
   null;
 
-// ✅ FIX 3: Improved scoreEntry — rewards partial keyword phrase matches
 function scoreEntry(message, entry) {
   const messageText = normalizeText(message);
   const messageTokens = new Set(tokenize(message));
   let score = 0;
 
-  // Exact question match
   if (messageText.includes(normalizeText(entry.question))) score += 10;
 
   for (const keyword of entry.keywords) {
     const normalizedKeyword = normalizeText(keyword);
     if (!normalizedKeyword) continue;
 
-    // Full keyword phrase match
     if (messageText.includes(normalizedKeyword)) {
       score += 5;
       continue;
     }
 
-    // Partial: count how many tokens of the keyword appear in the message
     const kwTokens = tokenize(keyword);
     const matchedTokens = kwTokens.filter((t) => messageTokens.has(t));
     if (kwTokens.length > 0) {
       const ratio = matchedTokens.length / kwTokens.length;
-      if (ratio >= 0.5) score += ratio * 3.5; // partial phrase credit
+      if (ratio >= 0.5) score += ratio * 3.5;
     }
 
-    // Individual token overlap
     for (const token of kwTokens) {
       if (messageTokens.has(token)) score += 1.25;
     }
   }
 
-  // Question token overlap
   for (const token of tokenize(entry.question)) {
     if (messageTokens.has(token)) score += 0.85;
   }
@@ -179,6 +173,7 @@ function localizeAnswer(entry, language) {
 function createSessionId() {
   return uuidv4();
 }
+
 function createEmployeeId(company, email) {
   const companyCode = (company || "zoiko")
     .replace(/\s+/g, "")
@@ -187,6 +182,7 @@ function createEmployeeId(company, email) {
   const userCode = (email || "user").split("@")[0].slice(0, 4).toUpperCase();
   return `${companyCode}-${userCode}-${Date.now().toString().slice(-4)}`;
 }
+
 function createConversationSnapshot({
   sessionId,
   user,
@@ -207,6 +203,7 @@ function createConversationSnapshot({
     expiresAt: createExpiryDate(),
   };
 }
+
 function getInMemoryConversation(sessionId) {
   const conversation = inMemoryConversations.get(sessionId);
   if (!conversation) return null;
@@ -217,6 +214,7 @@ function getInMemoryConversation(sessionId) {
   }
   return conversation;
 }
+
 async function upsertConversation({ sessionId, user, title, preview, status }) {
   const expiresAt = createExpiryDate();
   const payload = {
@@ -231,32 +229,43 @@ async function upsertConversation({ sessionId, user, title, preview, status }) {
   if (title) payload.title = summarizeText(title, 70);
   if (preview !== undefined) payload.preview = summarizeText(preview, 150);
   if (status) payload.status = status;
+
   const current =
     getInMemoryConversation(sessionId) ||
     createConversationSnapshot({ sessionId, user });
+
   const nextConversation = {
     ...current,
     ...payload,
     messageCount: current.messageCount || 0,
   };
   inMemoryConversations.set(sessionId, nextConversation);
+
   try {
-    const existing = await Conversation.findOne({ sessionId });
-    const messageCount = existing?.messageCount || current.messageCount || 0;
-    const record = await Conversation.findOneAndUpdate(
-      { sessionId },
-      {
+    // ✅ Sequelize: findOrCreate then update
+    const [record, created] = await Conversation.findOrCreate({
+      where: { sessionId },
+      defaults: {
         ...payload,
-        title: payload.title || existing?.title || current.title,
+        title: payload.title || current.title || "New conversation",
+        preview: payload.preview ?? current.preview ?? "",
+        messageCount: current.messageCount || 0,
+        startedAt: current.startedAt || new Date(),
+        status: status || "active",
+      },
+    });
+
+    if (!created) {
+      await record.update({
+        ...payload,
+        title: payload.title || record.title || current.title,
         preview:
           payload.preview !== undefined
             ? payload.preview
-            : existing?.preview || current.preview,
-        messageCount,
-        startedAt: existing?.startedAt || current.startedAt || new Date(),
-      },
-      { new: true, upsert: true, setDefaultsOnInsert: true },
-    );
+            : record.preview || current.preview,
+      });
+    }
+
     inMemoryConversations.set(sessionId, {
       sessionId: record.sessionId,
       userEmail: record.userEmail,
@@ -272,8 +281,10 @@ async function upsertConversation({ sessionId, user, title, preview, status }) {
       expiresAt: record.expiresAt,
     });
   } catch (_error) {}
+
   return nextConversation;
 }
+
 async function incrementConversationMessageCount(
   sessionId,
   user,
@@ -283,6 +294,7 @@ async function incrementConversationMessageCount(
   const current =
     getInMemoryConversation(sessionId) ||
     createConversationSnapshot({ sessionId, user });
+
   const nextCount = (current.messageCount || 0) + 1;
   const nextTitle =
     current.title && current.title !== "New conversation"
@@ -290,6 +302,7 @@ async function incrementConversationMessageCount(
       : role === "user"
         ? summarizeText(content, 70)
         : current.title;
+
   const nextConversation = {
     ...current,
     title: nextTitle || "New conversation",
@@ -299,30 +312,42 @@ async function incrementConversationMessageCount(
     expiresAt: createExpiryDate(),
   };
   inMemoryConversations.set(sessionId, nextConversation);
+
   try {
-    await Conversation.findOneAndUpdate(
-      { sessionId },
-      {
-        $set: {
-          userEmail: user?.email || "unknown@local",
-          userName: user?.name || "",
-          company: user?.company || "",
-          employeeId: user?.employeeId || "",
-          title: nextConversation.title,
-          preview: nextConversation.preview,
-          lastMessageAt: nextConversation.lastMessageAt,
-          expiresAt: nextConversation.expiresAt,
-        },
-        $inc: { messageCount: 1 },
-        $setOnInsert: {
-          startedAt: current.startedAt || new Date(),
-          status: "active",
-        },
+    // ✅ Sequelize: findOrCreate then increment + update separately
+    const [record, created] = await Conversation.findOrCreate({
+      where: { sessionId },
+      defaults: {
+        userEmail: user?.email || "unknown@local",
+        userName: user?.name || "",
+        company: user?.company || "",
+        employeeId: user?.employeeId || "",
+        title: nextConversation.title,
+        preview: nextConversation.preview,
+        messageCount: 1,
+        status: "active",
+        startedAt: current.startedAt || new Date(),
+        lastMessageAt: nextConversation.lastMessageAt,
+        expiresAt: nextConversation.expiresAt,
       },
-      { new: true, upsert: true, setDefaultsOnInsert: true },
-    );
+    });
+
+    if (!created) {
+      await record.increment("messageCount", { by: 1 });
+      await record.update({
+        userEmail: user?.email || "unknown@local",
+        userName: user?.name || "",
+        company: user?.company || "",
+        employeeId: user?.employeeId || "",
+        title: nextConversation.title,
+        preview: nextConversation.preview,
+        lastMessageAt: nextConversation.lastMessageAt,
+        expiresAt: nextConversation.expiresAt,
+      });
+    }
   } catch (_error) {}
 }
+
 async function createConversationForUser(user) {
   const sessionId = createSessionId();
   const conversation = await upsertConversation({
@@ -334,18 +359,22 @@ async function createConversationForUser(user) {
   });
   return { sessionId, expiresAt: conversation.expiresAt };
 }
+
 async function findOrCreateConversationForUser(user) {
   const now = new Date();
   try {
+    // ✅ Sequelize: use Op.gt instead of $gt
     const existing = await Conversation.findOne({
-      userEmail: user?.email || "unknown@local",
-      expiresAt: { $gt: now },
-    })
-      .sort({ lastMessageAt: -1 })
-      .lean();
+      where: {
+        userEmail: user?.email || "unknown@local",
+        expiresAt: { [Op.gt]: now },
+      },
+      order: [["lastMessageAt", "DESC"]],
+    });
     if (existing)
       return { sessionId: existing.sessionId, expiresAt: existing.expiresAt };
   } catch (_error) {}
+
   const memoryConversation = [...inMemoryConversations.values()]
     .filter(
       (conversation) =>
@@ -353,13 +382,16 @@ async function findOrCreateConversationForUser(user) {
         new Date(conversation.expiresAt).getTime() > Date.now(),
     )
     .sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt))[0];
+
   if (memoryConversation)
     return {
       sessionId: memoryConversation.sessionId,
       expiresAt: memoryConversation.expiresAt,
     };
+
   return createConversationForUser(user);
 }
+
 async function endConversation(sessionId, userEmail) {
   const conversation = getInMemoryConversation(sessionId);
   if (conversation && (!userEmail || conversation.userEmail === userEmail)) {
@@ -368,27 +400,37 @@ async function endConversation(sessionId, userEmail) {
     inMemoryConversations.set(sessionId, conversation);
   }
   try {
-    await Conversation.findOneAndUpdate(
-      { sessionId, ...(userEmail ? { userEmail } : {}) },
+    // ✅ Sequelize: use update() with where clause
+    await Conversation.update(
       {
         status: "ended",
         lastMessageAt: new Date(),
         expiresAt: createExpiryDate(),
       },
+      {
+        where: {
+          sessionId,
+          ...(userEmail ? { userEmail } : {}),
+        },
+      },
     );
   } catch (_error) {}
 }
+
 async function deleteConversation(sessionId, userEmail) {
   inMemoryConversations.delete(sessionId);
   inMemoryHistory.delete(sessionId);
   try {
-    await Conversation.deleteOne({
-      sessionId,
-      ...(userEmail ? { userEmail } : {}),
+    // ✅ Sequelize: use destroy() with where clause
+    await Conversation.destroy({
+      where: { sessionId, ...(userEmail ? { userEmail } : {}) },
     });
-    await Chat.deleteMany({ sessionId, ...(userEmail ? { userEmail } : {}) });
+    await Chat.destroy({
+      where: { sessionId, ...(userEmail ? { userEmail } : {}) },
+    });
   } catch (_error) {}
 }
+
 async function listUserConversations(userEmail) {
   const now = Date.now();
   const memoryConversations = [...inMemoryConversations.values()]
@@ -408,13 +450,18 @@ async function listUserConversations(userEmail) {
       lastMessageAt: conversation.lastMessageAt,
       expiresAt: conversation.expiresAt,
     }));
+
   try {
-    const conversations = await Conversation.find({
-      userEmail,
-      expiresAt: { $gt: new Date() },
-    })
-      .sort({ lastMessageAt: -1 })
-      .lean();
+    // ✅ Sequelize: use findAll() with where + Op.gt
+    const conversations = await Conversation.findAll({
+      where: {
+        userEmail,
+        expiresAt: { [Op.gt]: new Date() },
+      },
+      order: [["lastMessageAt", "DESC"]],
+      raw: true,
+    });
+
     if (conversations.length) {
       return conversations.map((conversation) => ({
         sessionId: conversation.sessionId,
@@ -428,10 +475,10 @@ async function listUserConversations(userEmail) {
       }));
     }
   } catch (_error) {}
+
   return memoryConversations;
 }
 
-// ✅ FIX 1 + FIX 2: Lower threshold to 1.5, return knowledge.json suggestions + route + intent
 function generateChatReply(message, language = "en") {
   const normalizedMessage = normalizeText(message);
   const emailManagerPrompt = knowledgeDocument.email_manager_prompt;
@@ -453,17 +500,16 @@ function generateChatReply(message, language = "en") {
       timestamp: new Date().toISOString(),
     };
   }
+
   const ranked = intents
     .map((entry) => ({ ...entry, score: scoreEntry(message, entry) }))
     .sort((a, b) => b.score - a.score);
   const bestMatch = ranked[0];
 
-  // ✅ FIX 1: Lowered threshold from 3 → 1.5 so partial matches are used
   if (!bestMatch || bestMatch.score < 1.5) return buildFallbackAnswer(language);
 
   const confidence = Math.min(0.99, Number((bestMatch.score / 16).toFixed(2)));
 
-  // ✅ FIX 2: Look up the original intent to get its suggestions array and route
   const originalIntent = knowledgeDocument.intents.find(
     (intent) =>
       (intent.id || slugify(extractQuestion(intent))) === bestMatch.id,
@@ -474,12 +520,11 @@ function generateChatReply(message, language = "en") {
     answer: localizeAnswer(bestMatch, language),
     matchedQuestion: bestMatch.question,
     confidence,
-    // Return knowledge.json suggestions if available, else fall back to ranked questions
     suggestions: Array.isArray(originalIntent?.suggestions)
       ? originalIntent.suggestions
       : ranked.slice(1, 4).map((entry) => entry.question),
-    route: originalIntent?.route ?? null,   // ✅ pass route to frontend
-    intent: bestMatch.id,                   // ✅ pass intent id to frontend
+    route: originalIntent?.route ?? null,
+    intent: bestMatch.id,
     timestamp: new Date().toISOString(),
   };
 }
@@ -525,15 +570,19 @@ async function saveMessage({
     metadata,
     timestamp: new Date().toISOString(),
   };
+
   const existing = inMemoryHistory.get(sessionId) || [];
   inMemoryHistory.set(sessionId, [...existing, message]);
+
   await incrementConversationMessageCount(
     sessionId,
     user || { email: userEmail },
     content,
     role,
   );
+
   try {
+    // ✅ Sequelize: create() works the same way
     await Chat.create({
       sessionId,
       userEmail,
@@ -543,18 +592,25 @@ async function saveMessage({
       expiresAt,
     });
   } catch (_error) {}
+
   return message;
 }
 
 async function getSessionHistory(sessionId) {
   const fallbackMessages = inMemoryHistory.get(sessionId) || [];
   try {
-    const dbMessages = await Chat.find({ sessionId })
-      .sort({ createdAt: 1 })
-      .lean();
+    // ✅ Sequelize: findAll with order, raw for plain objects
+    const dbMessages = await Chat.findAll({
+      where: { sessionId },
+      order: [["createdAt", "ASC"]],
+      raw: true,
+    });
+
     if (!dbMessages.length) return fallbackMessages;
+
     return dbMessages.map((entry) => ({
-      id: entry._id.toString(),
+      // ✅ PostgreSQL uses `id` not `_id`
+      id: entry.id.toString(),
       role: entry.role,
       content: entry.content,
       meta: entry.metadata,

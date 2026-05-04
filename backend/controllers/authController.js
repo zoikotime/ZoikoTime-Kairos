@@ -1,7 +1,10 @@
 const { validationResult } = require("express-validator");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-const { createEmployeeId, findOrCreateConversationForUser } = require("../services/chatService");
+const {
+  createEmployeeId,
+  findOrCreateConversationForUser,
+} = require("../services/chatService");
 
 async function verifyEmployee(req, res, next) {
   try {
@@ -25,19 +28,22 @@ async function verifyEmployee(req, res, next) {
     };
 
     try {
-      const user = await User.findOneAndUpdate(
-        { email: normalizedEmail },
-        { ...userPayload },
-        { new: true, upsert: true, setDefaultsOnInsert: true },
-      );
+      // ✅ Replaced Mongoose findOneAndUpdate → Supabase upsert
+      const user = await User.upsert({
+        name: userPayload.name,
+        email: userPayload.email,
+        company: userPayload.company,
+        employeeId: userPayload.employeeId,
+      });
+
       userPayload = {
         name: user.name,
         email: user.email,
         company: user.company,
-        employeeId: user.employeeId,
+        employeeId: user.employee_id, // Supabase uses snake_case column names
       };
     } catch (_error) {
-      // Continue without Mongo persistence during initial local setup.
+      // Continue without Supabase persistence during initial local setup.
     }
 
     const activeConversation = await findOrCreateConversationForUser({

@@ -8,8 +8,6 @@ const chatRoutes = require("./routes/chatRoutes");
 const escalateRoutes = require("./routes/escalateRoutes");
 const chatbotRoutes = require("./routes/chatbotRoutes");
 const { errorHandler } = require("./middlewares/errorHandler");
-
-// ✅ NEW IMPORT
 const mailRoutes = require("./routes/mailRoutes");
 
 dotenv.config();
@@ -37,7 +35,7 @@ app.use(
 
 app.use(helmet());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); 
+app.use(express.urlencoded({ extended: true }));
 
 app.get("/health", (_req, res) => {
   res.json({ success: true, service: "zt-chatbot-server", status: "running" });
@@ -47,13 +45,12 @@ app.use("/api/auth", authRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/escalate", escalateRoutes);
 app.use("/api", chatbotRoutes);
-
-// ✅ NEW ROUTE ADDED (NO CHANGE TO EXISTING)
 app.use("/api/mail", mailRoutes);
 
 app.use(errorHandler);
 
-connectDB(process.env.MONGODB_URI).finally(() => {
+// Supabase is cloud-hosted — connectDB just verifies the connection
+connectDB().finally(() => {
   const server = app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });

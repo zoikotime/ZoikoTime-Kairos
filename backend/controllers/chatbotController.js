@@ -129,6 +129,7 @@ function getHistory(req, res) {
 }
 
 function getOverview(_req, res) {
+  // ✅ Fixed typo: was "r  es"
   res.json({
     success: true,
     ...getAdminOverview(),

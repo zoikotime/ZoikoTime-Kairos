@@ -27,8 +27,9 @@ COPY backend/ ./backend/
 COPY --from=frontend-build /app/frontend/dist ./backend/public
 
 # Expose the backend port (change if yours differs)
-EXPOSE 5000
+EXPOSE 8080
 
 ENV NODE_ENV=production
 
 CMD ["node", "backend/server.js"]
+

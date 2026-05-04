@@ -13,8 +13,6 @@ const {
 // 🔥 MAIN CHAT FUNCTION
 async function sendChatMessage(req, res, next) {
   try {
-    console.log("📥 Incoming request body:", req.body);
-
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -69,8 +67,6 @@ async function sendChatMessage(req, res, next) {
       };
     }
 
-    console.log("🤖 Generated reply:", reply);
-
     // ✅ SAVE ASSISTANT MESSAGE
     await saveMessage({
       sessionId,
@@ -82,8 +78,8 @@ async function sendChatMessage(req, res, next) {
         matchedQuestion: reply.matchedQuestion,
         confidence: reply.confidence,
         suggestions: reply.suggestions,
-        route: reply.route,    // ✅ FIX 4: persist route from knowledge.json
-        intent: reply.intent,  // ✅ FIX 4: persist intent id from knowledge.json
+        route: reply.route, // ✅ FIX 4: persist route from knowledge.json
+        intent: reply.intent, // ✅ FIX 4: persist intent id from knowledge.json
       },
     });
 
@@ -181,7 +177,7 @@ async function closeSession(req, res, next) {
     const { userEmail } = req.body;
     await endConversation(
       req.params.sessionId,
-      userEmail?.toLowerCase().trim()
+      userEmail?.toLowerCase().trim(),
     );
     return res.json({ success: true });
   } catch (error) {

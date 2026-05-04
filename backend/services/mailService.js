@@ -3,11 +3,6 @@ require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
 
 const nodemailer = require("nodemailer");
 
-console.log("ENV CHECK:", {
-  user: process.env.SMTP_USER,
-  pass: process.env.SMTP_PASS ? "loaded" : "MISSING",
-  from: process.env.FROM_EMAIL,
-});
 
 const transporter = nodemailer.createTransport({
   host: "smtpout.secureserver.net",

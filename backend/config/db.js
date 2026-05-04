@@ -1,26 +1,24 @@
-const mongoose = require("mongoose");
+const { createClient } = require("@supabase/supabase-js");
 
-let isConnected = false;
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
-async function connectDB(uri) {
-  if (!uri) {
-    console.warn("MONGODB_URI not provided. Running without MongoDB connection.");
-    return false;
-  }
+if (!supabaseUrl || !supabaseKey) {
+  console.warn("SUPABASE_URL or SUPABASE_ANON_KEY not provided.");
+}
 
-  if (isConnected) return true;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
+async function connectDB() {
   try {
-    await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 5000,
-    });
-    isConnected = true;
-    console.log("MongoDB connected");
+    const { error } = await supabase.from("users").select("id").limit(1);
+    if (error) throw error;
+    console.log("Supabase connected successfully.");
     return true;
   } catch (error) {
-    console.warn(`MongoDB connection skipped: ${error.message}`);
+    console.warn(`Supabase connection check failed: ${error.message}`);
     return false;
   }
 }
 
-module.exports = { connectDB };
+module.exports = { supabase, connectDB };
