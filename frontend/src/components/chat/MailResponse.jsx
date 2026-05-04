@@ -1,18 +1,24 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useStore } from "../../store/useStore";
-import { sendMail } from "../../services/api";
 import toast from "react-hot-toast";
+
+// One mail per conversation — emailSent is read from the Zustand store
+// so it survives component unmount/remount within the same session.
+// Call useStore.getState().setMailSent(true) after a successful send.
+// Add to your store:
+//   mailSent: false,
+//   setMailSent: (v) => set({ mailSent: v }),
 
 export default function MailResponse({ theme, onClose }) {
   const isDark = theme === "dark";
   const user = useStore((state) => state.user);
   const messages = useStore((state) => state.messages);
-  const mailSent = useStore((state) => state.mailSent);
-  const setMailSent = useStore((state) => state.setMailSent);
+  const mailSent = useStore((state) => state.mailSent);         // ← from store
+  const setMailSent = useStore((state) => state.setMailSent);   // ← from store
 
   const [sending, setSending] = useState(false);
+  const [showForm, setShowForm] = useState(false); // only shown after guard passes
 
-  // Pre-fill subject from the last user message
   const fallbackIssue =
     messages
       .filter((m) => m.role === "user")
@@ -22,19 +28,11 @@ export default function MailResponse({ theme, onClose }) {
 
   const [subject, setSubject] = useState(fallbackIssue);
   const [body, setBody] = useState("");
+  const toEmail = "support@zoikotime.com";
 
-  // ─── Fire toast immediately when user opens mail after already sending ──────
-  useEffect(() => {
-    if (mailSent) {
-      toast("Only 1 mail is allowed per conversation. To send another, please start a new conversation.", {
-        icon: "📬",
-        duration: 5000,
-        style: { fontSize: "13px", maxWidth: "340px" },
-      });
-    }
-  }, [mailSent]);
-
-  // ─── Guard: mail already sent this conversation ───────────────────────────
+  // ─── Guard: if mail already sent this conversation ────────────────────────
+  // This is called by whatever parent triggers the mail panel.
+  // But we also handle it here if the component is mounted directly.
   if (mailSent) {
     return (
       <div
@@ -52,7 +50,11 @@ export default function MailResponse({ theme, onClose }) {
         >
           Mail Already Sent
         </div>
-        <p className={`text-xs ${isDark ? "text-[#789483]" : "text-[#64748b]"}`}>
+        <p
+          className={`text-xs ${
+            isDark ? "text-[#789483]" : "text-[#64748b]"
+          }`}
+        >
           Only one support mail is allowed per conversation. Start a new
           conversation if you need further assistance.
         </p>
@@ -72,10 +74,16 @@ export default function MailResponse({ theme, onClose }) {
     );
   }
 
-  // ─── Send handler ─────────────────────────────────────────────────────────
+  // ─── Success screen (shown right after sending) ───────────────────────────
+  // mailSent is now true in store, so re-opening this component shows the
+  // guard above instead — preventing a 2nd send entirely.
+  if (mailSent === false && showForm === false && !sending) {
+    // first mount — show the form (fall through)
+  }
+
   const handleSend = async () => {
     if (!user?.email) {
-      toast.error("User session missing. Please restart the app.");
+      toast.error("User session missing");
       return;
     }
     if (!subject.trim()) {
@@ -85,53 +93,105 @@ export default function MailResponse({ theme, onClose }) {
 
     setSending(true);
 
+    // ─── Plain text body ────────────────────────────────────────────────────
+    const chatHistoryText = messages
+      .slice(-10)
+      .map((m) => {
+        if (typeof m.content !== "string") return null;
+        const role = m.role === "user" ? "User" : "Bot";
+        return `${role}: ${m.content}`;
+      })
+      .filter(Boolean)
+      .join("\n\n");
+
+    const finalBody = `
+User Name: ${user?.name}
+User Email: ${user?.email}
+
+----------------------
+
+Issue:
+${subject}
+
+----------------------
+
+User Description:
+${body}
+
+----------------------
+
+Chat History:
+${chatHistoryText}
+`;
+
+    // ─── HTML email body ────────────────────────────────────────────────────
+    const chatHistoryHtml = messages
+      .slice(-10)
+      .map((m) => {
+        if (typeof m.content !== "string") return "";
+        const isUser = m.role === "user";
+        return `
+          <div style="display:flex;justify-content:${isUser ? "flex-end" : "flex-start"};margin:6px 0;">
+            <div style="max-width:70%;padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.4;background:${isUser ? "#DCF8C6" : "#F1F0F0"};color:#000;">
+              ${m.content}
+            </div>
+          </div>`;
+      })
+      .join("");
+
+    const htmlTemplate = `
+<div style="font-family:Arial;background:#f5f5f5;padding:20px;">
+  <div style="max-width:600px;margin:auto;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+    <div style="background:#16a34a;color:#fff;padding:14px;font-weight:bold;">
+      ZoikoTime Support Request
+    </div>
+    <div style="padding:15px;">
+      <p><b>User:</b> ${user?.name}</p>
+      <p><b>Email:</b> ${user?.email}</p>
+      <hr/>
+      <p><b>Issue:</b></p>
+      <p>${subject}</p>
+      <p><b>Description:</b></p>
+      <p>${body || "N/A"}</p>
+      <hr/>
+      <p><b>Chat Conversation:</b></p>
+      <div style="background:#e5ddd5;padding:12px;border-radius:10px;">
+        ${chatHistoryHtml}
+      </div>
+    </div>
+  </div>
+</div>`;
+
     try {
-      const sessionId = useStore.getState().sessionId;
-
-      // Backend builds the HTML from sessionId — we only send metadata + description
-      await sendMail({
-        sessionId,
-        user: {
-          name: user.name,
-          email: user.email,
-          company: user.company,
-        },
-        to: "support@zoikotime.com",
-        subject,
-        body,
+      const res = await fetch("http://localhost:5000/api/mail/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: useStore.getState().sessionId,
+          user: {
+            name: user?.name,
+            email: user?.email,
+            company: user?.company,
+          },
+          from: user.email,
+          to: toEmail,
+          subject,
+          body: finalBody,
+          html: htmlTemplate,
+        }),
       });
 
-      // Lock this conversation — store survives remount
-      setMailSent(true);
-      toast.success("Mail sent! Our team will get back to you shortly.", {
-        duration: 4000,
-      });
+      const data = await res.json();
 
-    } catch (err) {
-      // ─── Rate limit: 5 mails per 24hr per user email ──────────────────────
-      // Backend 429: { success: false, message: "Daily email limit reached (5/day). Try again in X hour(s)." }
-      if (err?.response?.status === 429) {
-        const raw = err.response?.data?.message || "";
-        // Extract hours from backend message e.g. "Try again in 3 hour(s)."
-        const hoursMatch = raw.match(/(\d+)\s*hour/i);
-        const hours = hoursMatch ? parseInt(hoursMatch[1]) : null;
-        const resetMsg = hours
-          ? `Your daily support mail limit of 5 has been reached. You can send another mail in ${hours} hour${hours > 1 ? "s" : ""}. Please try again later.`
-          : "Your daily support mail limit of 5 has been reached. Please try again after 24 hours.";
-        toast.error(resetMsg, {
-          duration: 7000,
-          icon: "🚫",
-          style: { fontSize: "13px", maxWidth: "360px" },
-        });
-        return;
+      if (data.success) {
+        setMailSent(true); // ← lock in store — survives remount
+        toast.success("Mail sent! Our team will get back to you shortly.");
+      } else {
+        toast.error(data.message || "Failed to send. Please try again.");
       }
-
-      // ─── Any other server / network error ────────────────────────────────
-      const fallbackMsg =
-        err?.response?.data?.message ||
-        "Something went wrong. Please try again.";
-      toast.error(fallbackMsg);
-
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setSending(false);
     }
@@ -150,10 +210,13 @@ export default function MailResponse({ theme, onClose }) {
       : "border-[rgba(31,154,70,0.15)] bg-[rgba(31,154,70,0.04)] text-[#6b8f74]"
   }`;
 
+  // ─── Success screen (immediately after this session's send) ───────────────
+  // Note: on next open, the store guard above handles it instead.
+  if (mailSent) return null; // already handled above, but safety guard
+
   // ─── Mail form ────────────────────────────────────────────────────────────
   return (
     <div className="space-y-2 text-sm">
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <div
@@ -166,7 +229,7 @@ export default function MailResponse({ theme, onClose }) {
         {onClose && (
           <button
             onClick={onClose}
-            title="Close mail form"
+            title="Close mail"
             className={`text-xs px-2 py-0.5 rounded transition-colors ${
               isDark
                 ? "text-[#789483] hover:text-[#cde8d4] hover:bg-[rgba(255,255,255,0.05)]"
@@ -179,26 +242,21 @@ export default function MailResponse({ theme, onClose }) {
       </div>
 
       {/* Name (read-only) */}
-      <input
-        value={user?.name || ""}
-        disabled
-        className={disabledInputClass}
-        placeholder="Name"
-      />
+      <input value={user?.name || ""} disabled className={disabledInputClass} />
 
       {/* From email (read-only) */}
       <input
         value={user?.email || ""}
         disabled
         className={disabledInputClass}
-        placeholder="Your email"
+        placeholder="from"
       />
 
       {/* Subject */}
       <input
         value={subject}
         onChange={(e) => setSubject(e.target.value)}
-        placeholder="Issue summary"
+        placeholder="Issue"
         className={inputClass}
         required
       />
