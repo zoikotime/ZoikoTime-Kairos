@@ -52,8 +52,13 @@ export const useStore = create((set, get) => ({
   sessionId: null,
   expiresAt: null,
 
-  // ✅ NEW (EDIT MODE)
   isEditing: false,
+
+  // ─── Mail lock: one mail per conversation ─────────────────────────────────
+  // Reset on: new session login, logout, new conversation start
+  mailSent: false,
+  setMailSent: (v) => set({ mailSent: v }),
+  // ─────────────────────────────────────────────────────────────────────────
 
   assistantContext: defaultAssistantContext,
   sessions: [],
@@ -94,6 +99,7 @@ export const useStore = create((set, get) => ({
     set({ sessionId, expiresAt: expiresAt || current.expiresAt });
   },
 
+  // ─── New login → reset mail lock for the new conversation ─────────────────
   setUserSession: async (payload) => {
     await saveSession(payload);
     saveDraft(payload.user);
@@ -105,7 +111,8 @@ export const useStore = create((set, get) => ({
       onboardingDraft: payload.user,
       messages: createWelcomeMessage(get().language, get().assistantContext),
       hydrated: true,
-      isEditing: false, // ✅ reset edit mode here
+      isEditing: false,
+      mailSent: false, // ← reset on new session
     });
   },
 
@@ -126,6 +133,7 @@ export const useStore = create((set, get) => ({
           theme,
           onboardingDraft: loadDraft(),
           messages: createWelcomeMessage(language, get().assistantContext),
+          mailSent: false, // ← reset on fresh hydration (no session)
         });
         return;
       }
@@ -139,6 +147,8 @@ export const useStore = create((set, get) => ({
         onboardingDraft: loadDraft() || session.user,
         hydrated: true,
         messages: createWelcomeMessage(language, get().assistantContext),
+        // mailSent intentionally NOT reset here — if the app restarts mid-session
+        // the lock is already gone (store is in-memory). Fine for this use case.
       });
     } catch (err) {
       console.error("Session hydration failed:", err);
@@ -193,6 +203,7 @@ export const useStore = create((set, get) => ({
 
   closeHistory: () => set({ historyOpen: false }),
 
+  // ─── Logout → reset mail lock ──────────────────────────────────────────────
   logout: async () => {
     if (get().user) {
       saveDraft(get().user);
@@ -207,6 +218,7 @@ export const useStore = create((set, get) => ({
       messages: createWelcomeMessage(get().language, get().assistantContext),
       hydrated: true,
       isEditing: false,
+      mailSent: false, // ← reset on logout
     });
   },
 }));

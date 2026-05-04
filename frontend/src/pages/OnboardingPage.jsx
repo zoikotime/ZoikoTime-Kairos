@@ -86,7 +86,16 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="page-shell">
+    <div
+      className="page-shell"
+      style={{
+        display: "flex",
+        justifyContent: "flex-end",
+        alignItems: "flex-end",
+        padding: "1.5rem",
+        minHeight: "100vh",
+      }}
+    >
       <motion.div
         className="onboarding-card"
         initial={{ opacity: 0, y: 24 }}
@@ -94,8 +103,12 @@ export default function OnboardingPage() {
         transition={{ duration: 0.5 }}
       >
         <div className="brand-row">
-          <div className="img-ctn h-14 w-14 rounded-full border-2 border-green-500" >
-            <img src='./response-icon.png' alt="" className="h-full w-full object-contain"/>
+          <div className="img-ctn h-14 w-14 rounded-full border-2 border-green-500">
+            <img
+              src="./response-icon.png"
+              alt=""
+              className="h-full w-full object-contain"
+            />
           </div>
           <div>
             <p className="eyebrow">{copy.onboardingTag}</p>

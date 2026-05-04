@@ -11,10 +11,10 @@ export async function verifyUser(payload) {
   return data;
 }
 
-// CHAT (🔥 MAIN FLOW)
+// CHAT
 export async function sendMessage(payload) {
   const { data } = await api.post("/chat", payload);
-  return data; // will now return sessionId also
+  return data;
 }
 
 export async function fetchHistory(sessionId) {
@@ -27,22 +27,13 @@ export async function fetchUserSessions(email) {
     params: { email },
   });
 
-  // 🔥 EXTRA SAFETY (frontend filter)
   return {
     ...data,
-    sessions: (data.sessions || []).filter(
-      (s) => s.messageCount > 0 // or s.messages?.length > 0
-    ),
+    sessions: (data.sessions || []).filter((s) => s.messageCount > 0),
   };
 }
 
-// ❌ REMOVE THIS COMPLETELY
-// export async function createChatSession(user) {
-//   const { data } = await api.post("/chat/sessions", { user });
-//   return data;
-// }
-
-// SESSION MANAGEMENT (keep these)
+// SESSION MANAGEMENT
 export async function endChatSession(sessionId, userEmail) {
   const { data } = await api.patch(`/chat/sessions/${sessionId}/end`, {
     userEmail,
@@ -53,6 +44,21 @@ export async function endChatSession(sessionId, userEmail) {
 export async function deleteChatSession(sessionId, userEmail) {
   const { data } = await api.delete(`/chat/sessions/${sessionId}`, {
     params: { userEmail },
+  });
+  return data;
+}
+
+// MAIL
+// Backend keys rate limit by user.email — always include it.
+// Backend builds the HTML itself from sessionId, so we only send metadata.
+export async function sendMail({ sessionId, user, to, subject, body }) {
+  const { data } = await api.post("/mail/send", {
+    sessionId,
+    user,
+    to,
+    subject,
+    body,
+    email: user?.email, // explicit top-level key for rate limiter middleware
   });
   return data;
 }

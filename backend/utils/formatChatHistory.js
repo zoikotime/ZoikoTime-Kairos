@@ -8,68 +8,26 @@ function extractDescription(raw = "") {
   return match ? match[1].trim() : raw;
 }
 
-function formatChatHistory(messages = [], user = {}, subject = "", description = "") {
-
+function formatChatHistory(
+  messages = [],
+  user = {},
+  subject = "",
+  description = "",
+) {
   const cleanDesc = extractDescription(description);
 
+  // ─── Plain text conversation like Stripe chat transcript ───────────────────
   const formattedMessages = messages
     .map((msg) => {
       const isUser = msg.role === "user";
-
-      return `
-        <div style="
-          display:flex;
-          margin:4px 6px;
-          ${isUser ? "justify-content:flex-end;" : "justify-content:flex-start;"}
-        ">
-          <div style="
-            display:inline-block;
-            max-width:62%;
-            padding:8px 12px;
-            border-radius:${isUser ? "14px 14px 3px 14px" : "14px 14px 14px 3px"};
-            font-size:13px;
-            line-height:1.5;
-            word-break:break-word;
-            background:${isUser ? "#d4f8c4" : "#ffffff"};
-            border:1px solid ${isUser ? "#c3e6aa" : "#e0e0e0"};
-          ">
-
-            <div style="
-              font-size:10.5px;
-              font-weight:bold;
-              margin-bottom:3px;
-              color:${isUser ? "#075E54" : "#444"};
-              text-align:${isUser ? "right" : "left"};
-            ">
-              ${isUser ? user.name || "User" : "Bot"}
-            </div>
-
-            <div style="white-space:pre-wrap; word-break:break-word;">
-              ${msg.content || ""}
-            </div>
-
-            ${
-              msg.timestamp
-                ? `<div style="
-                    text-align:right;
-                    font-size:10px;
-                    color:#aaa;
-                    margin-top:4px;
-                  ">
-                    ${formatTime(msg.timestamp)}
-                  </div>`
-                : ""
-            }
-
-          </div>
-        </div>
-      `;
+      const senderName = isUser ? user.name || "User" : "Bot";
+      const time = msg.timestamp ? `(${formatTime(msg.timestamp)}) ` : "";
+      return `${time}<b>${senderName}</b>: ${msg.content || ""}`;
     })
-    .join("");
+    .join("<br/>");
 
   return `
   <div style="font-family:Arial, sans-serif; background:#f2f2f2; padding:30px;">
-
     <div style="max-width:620px; margin:0 auto;">
 
       <!-- HEADER -->
@@ -98,7 +56,7 @@ function formatChatHistory(messages = [], user = {}, subject = "", description =
 
         <hr style="margin:12px 0;" />
 
-        <p><b>Issue:</b></p>
+        <p>🔴<b>Issue:</b></p>
         <p>${subject || "N/A"}</p>
 
         <p><b>Description:</b></p>
@@ -108,19 +66,22 @@ function formatChatHistory(messages = [], user = {}, subject = "", description =
 
         <p><b>Chat Conversation:</b></p>
 
-        <!-- CHAT -->
+        <!-- PLAIN TEXT CHAT TRANSCRIPT -->
         <div style="
-          background:#e5ddd5;
-          padding:10px 6px;
-          border-radius:10px;
+          background:#f9f9f9;
+          padding:12px 16px;
+          border:1px solid #e0e0e0;
+          border-radius:6px;
           margin-top:8px;
+          font-size:13px;
+          line-height:2;
+          color:#333;
         ">
-          ${formattedMessages || "<p style='padding:0 10px;color:#666;'>No messages</p>"}
+          ${formattedMessages || "<span style='color:#666;'>No messages</span>"}
         </div>
 
       </div>
     </div>
-
   </div>
   `;
 }

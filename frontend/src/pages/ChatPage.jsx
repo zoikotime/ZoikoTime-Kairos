@@ -242,7 +242,7 @@ export default function ChatPage() {
 
   return (
     <div
-      className={`min-h-screen flex items-center justify-center px-3 py-4 sm:px-4 transition-colors duration-300 ${
+      className={`min-h-screen flex items-end justify-end px-3 py-4 sm:px-4 transition-colors duration-300 ${
         isDark ? "bg-[rgba(2,6,3,1)]" : "bg-[rgba(240,253,244,1)]"
       }`}
     >
