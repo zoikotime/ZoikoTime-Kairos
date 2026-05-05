@@ -6,22 +6,31 @@ const sendMailHandler = async (req, res) => {
   try {
     const { sessionId, user, to, subject, body } = req.body;
 
-    if (!sessionId || !user || !to) {
-      return res.status(400).json({ success: false, message: "Missing required fields" });
+    if (!sessionId || !user?.email || !to || !subject) {
+      return res.status(400).json({
+        success: false,
+        code: "MISSING_FIELDS",
+        message: "Missing required fields.",
+      });
     }
 
     const messages = await getSessionHistory(sessionId);
-
-    // ✅ Pass subject and body so agent sees the issue clearly
     const html = formatChatHistory(messages, user, subject, body);
 
     await sendMail({ to, from: user.email, subject, html });
 
-    res.json({ success: true, message: "Email sent successfully" });
+    return res.status(200).json({
+      success: true,
+      message: "Email sent successfully.",
+    });
 
   } catch (error) {
-    console.error("Mail Error:", error.message);
-    res.status(500).json({ success: false, message: error.message || "Failed to send email" });
+    console.error("[MailController] Error:", error.message);
+    return res.status(500).json({
+      success: false,
+      code: "SERVER_ERROR",
+      message: "Something went wrong. Please try again later.",
+    });
   }
 };
 

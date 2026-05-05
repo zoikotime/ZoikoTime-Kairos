@@ -2,22 +2,14 @@ import { useState } from "react";
 import { useStore } from "../../store/useStore";
 import toast from "react-hot-toast";
 
-// One mail per conversation — emailSent is read from the Zustand store
-// so it survives component unmount/remount within the same session.
-// Call useStore.getState().setMailSent(true) after a successful send.
-// Add to your store:
-//   mailSent: false,
-//   setMailSent: (v) => set({ mailSent: v }),
-
 export default function MailResponse({ theme, onClose }) {
   const isDark = theme === "dark";
   const user = useStore((state) => state.user);
   const messages = useStore((state) => state.messages);
-  const mailSent = useStore((state) => state.mailSent);         // ← from store
-  const setMailSent = useStore((state) => state.setMailSent);   // ← from store
+  const mailSent = useStore((state) => state.mailSent);
+  const setMailSent = useStore((state) => state.setMailSent);
 
   const [sending, setSending] = useState(false);
-  const [showForm, setShowForm] = useState(false); // only shown after guard passes
 
   const fallbackIssue =
     messages
@@ -30,9 +22,7 @@ export default function MailResponse({ theme, onClose }) {
   const [body, setBody] = useState("");
   const toEmail = "support@zoikotime.com";
 
-  // ─── Guard: if mail already sent this conversation ────────────────────────
-  // This is called by whatever parent triggers the mail panel.
-  // But we also handle it here if the component is mounted directly.
+  // ─── Guard: one mail per conversation ────────────────────────────────────
   if (mailSent) {
     return (
       <div
@@ -50,11 +40,7 @@ export default function MailResponse({ theme, onClose }) {
         >
           Mail Already Sent
         </div>
-        <p
-          className={`text-xs ${
-            isDark ? "text-[#789483]" : "text-[#64748b]"
-          }`}
-        >
+        <p className={`text-xs ${isDark ? "text-[#789483]" : "text-[#64748b]"}`}>
           Only one support mail is allowed per conversation. Start a new
           conversation if you need further assistance.
         </p>
@@ -74,16 +60,10 @@ export default function MailResponse({ theme, onClose }) {
     );
   }
 
-  // ─── Success screen (shown right after sending) ───────────────────────────
-  // mailSent is now true in store, so re-opening this component shows the
-  // guard above instead — preventing a 2nd send entirely.
-  if (mailSent === false && showForm === false && !sending) {
-    // first mount — show the form (fall through)
-  }
-
+  // ─── Send handler ─────────────────────────────────────────────────────────
   const handleSend = async () => {
     if (!user?.email) {
-      toast.error("User session missing");
+      toast.error("User session missing. Please log in again.");
       return;
     }
     if (!subject.trim()) {
@@ -93,7 +73,7 @@ export default function MailResponse({ theme, onClose }) {
 
     setSending(true);
 
-    // ─── Plain text body ────────────────────────────────────────────────────
+    // Plain text fallback
     const chatHistoryText = messages
       .slice(-10)
       .map((m) => {
@@ -124,7 +104,7 @@ Chat History:
 ${chatHistoryText}
 `;
 
-    // ─── HTML email body ────────────────────────────────────────────────────
+    // HTML email body
     const chatHistoryHtml = messages
       .slice(-10)
       .map((m) => {
@@ -183,15 +163,29 @@ ${chatHistoryText}
 
       const data = await res.json();
 
+      if (res.status === 429) {
+        // ─── Daily limit hit ────────────────────────────────────────────────
+        // data.retryAfter e.g. "2 hr 34 min"
+        toast.error(
+          `You've reached the limit of 5 mails per 24 hrs. Try again in ${data.retryAfter}.`,
+          { duration: 5000 }
+        );
+        return;
+      }
+
       if (data.success) {
-        setMailSent(true); // ← lock in store — survives remount
-        toast.success("Mail sent! Our team will get back to you shortly.");
+        // ─── Success — lock this conversation ───────────────────────────────
+        setMailSent(true);
+        toast.success("Mail sent successfully! Our team will get back to you shortly.", {
+          duration: 4000,
+        });
+        if (onClose) onClose();
       } else {
         toast.error(data.message || "Failed to send. Please try again.");
       }
     } catch (err) {
-      console.error(err);
-      toast.error("Something went wrong. Please try again.");
+      console.error("[MailResponse] Send error:", err);
+      toast.error("Something went wrong. Please check your connection and try again.");
     } finally {
       setSending(false);
     }
@@ -210,20 +204,12 @@ ${chatHistoryText}
       : "border-[rgba(31,154,70,0.15)] bg-[rgba(31,154,70,0.04)] text-[#6b8f74]"
   }`;
 
-  // ─── Success screen (immediately after this session's send) ───────────────
-  // Note: on next open, the store guard above handles it instead.
-  if (mailSent) return null; // already handled above, but safety guard
-
   // ─── Mail form ────────────────────────────────────────────────────────────
   return (
     <div className="space-y-2 text-sm">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div
-          className={`font-semibold ${
-            isDark ? "text-[#d4f0dc]" : "text-[#0f3d20]"
-          }`}
-        >
+        <div className={`font-semibold ${isDark ? "text-[#d4f0dc]" : "text-[#0f3d20]"}`}>
           📩 Send Support Mail
         </div>
         {onClose && (

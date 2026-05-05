@@ -1,8 +1,60 @@
 import { useEffect, useRef, useState } from "react";
 import TypingDots from "./TypingDots";
 
-// Module-level set — persists across re-renders, tracks already-animated message IDs
 const animatedIds = new Set();
+
+// ─── Module-level audio context singleton ────────────────────────────────────
+let audioCtx = null;
+
+function getAudioContext() {
+  if (!audioCtx) {
+    audioCtx = new (
+      window.AudioContext ||
+      window.webkitAudioContext
+    )();
+  }
+  return audioCtx;
+}
+
+// ─── Notify sound ─────────────────────────────────────────────────────────────
+async function playDoneSound() {
+  try {
+    const ac = getAudioContext();
+
+    if (ac.state !== "running") {
+      await ac.resume();
+    }
+
+    const t = ac.currentTime;
+
+    [[880, 0], [660, 0.15]].forEach(([freq, offset]) => {
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+
+      osc.connect(gain);
+      gain.connect(ac.destination);
+
+      osc.type = "sine";
+
+      osc.frequency.setValueAtTime(freq, t + offset);
+
+      gain.gain.setValueAtTime(0, t + offset);
+      gain.gain.linearRampToValueAtTime(0.05, t + offset + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + offset + 0.2);
+
+      osc.start(t + offset);
+      osc.stop(t + offset + 0.2);
+
+      osc.onended = () => {
+        osc.disconnect();
+        gain.disconnect();
+      };
+    });
+
+  } catch (_) {
+    // audio is optional
+  }
+}
 
 export default function MessageBubble({
   msg,
@@ -61,6 +113,9 @@ export default function MessageBubble({
         setDisplayed(body);
         setAnimating(false);
         bottomRef?.current?.scrollIntoView({ behavior: "smooth" });
+
+        // ─── Play notify sound 100ms after animation completes ─────────────
+        setTimeout(playDoneSound, 100);
       }
     }
 
@@ -74,7 +129,6 @@ export default function MessageBubble({
 
   const renderedBody = isStringBody ? (animating ? displayed : body) : body;
 
-  // Split on \n\n for paragraphs, then handle \n within each paragraph
   function renderText(text) {
     const paragraphs = text.split("\n\n");
     return paragraphs.map((para, pi) => (
@@ -97,7 +151,6 @@ export default function MessageBubble({
       className={`flex w-full gap-2.5 ${isUser ? "justify-end" : "justify-start"} mb-4`}
       style={{ animation: "msgIn 0.22s ease both" }}
     >
-      {/* Bot avatar */}
       {!isUser && (
         <div className="relative h-8 w-8">
           <div className="h-8 w-8 rounded-full bg-[#e6f4f7] flex items-center justify-center">
@@ -111,7 +164,6 @@ export default function MessageBubble({
       <div
         className={`flex flex-col gap-2 ${isUser ? "items-end" : "items-start"} max-w-[78%]`}
       >
-        {/* Bubble */}
         <div
           className={
             isUser
@@ -132,7 +184,6 @@ export default function MessageBubble({
           )}
         </div>
 
-        {/* Citations — appear after animation finishes */}
         {!isUser && !msg.typing && !animating && msg.citations?.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-0.5">
             {msg.citations.map((c, i) => (
@@ -150,7 +201,6 @@ export default function MessageBubble({
           </div>
         )}
 
-        {/* Quick reply chips — appear after animation finishes */}
         {!isUser &&
           !msg.typing &&
           !animating &&
@@ -173,7 +223,6 @@ export default function MessageBubble({
           )}
       </div>
 
-      {/* User avatar */}
       {isUser && (
         <div className="flex-shrink-0 mt-0.5">
           <div

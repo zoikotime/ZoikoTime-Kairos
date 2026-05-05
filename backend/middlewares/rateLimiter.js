@@ -12,8 +12,8 @@ const rateLimiter = new RateLimiterMemory({
 const emailRateLimiter = new RateLimiterPostgres({
   storeClient: sequelize,
   points: 5,
-  duration: 86400,        // 24 hours in seconds
-  tableName: "email_rate_limits",  // auto created by the library
+  duration: 86400,
+  tableName: "email_rate_limits",
 });
 
 // ─── Chat Rate Limiter Middleware ─────────────────────────────────────────────
@@ -33,15 +33,31 @@ async function chatRateLimiter(req, res, next) {
 // ─── Email Rate Limiter Middleware ────────────────────────────────────────────
 async function mailRateLimiter(req, res, next) {
   try {
-    // Key is per user email — each email gets its own 5/day limit
-    const key = req.body?.email || req.body?.user?.email || req.ip || "local";
+    const key = req.body?.user?.email || req.ip || "local";
     await emailRateLimiter.consume(key);
     next();
   } catch (error) {
-    const retrySecs = Math.ceil((error.msBeforeNextReset || 0) / 1000 / 3600);
-    res.status(429).json({
+    const ms = error.msBeforeNextReset || 0;
+    const totalSeconds = Math.ceil(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.ceil((totalSeconds % 3600) / 60);
+
+    // Build a human-readable retry string e.g. "2 hr 34 min" or "45 min"
+    let retryAfter = "";
+    if (hours > 0 && minutes > 0) {
+      retryAfter = `${hours} hr ${minutes} min`;
+    } else if (hours > 0) {
+      retryAfter = `${hours} hr`;
+    } else {
+      retryAfter = `${minutes} min`;
+    }
+
+    return res.status(429).json({
       success: false,
-      message: `Daily email limit reached (5/day). Try again in ${retrySecs} hour(s).`,
+      code: "EMAIL_LIMIT_REACHED",           // ← frontend keys off this
+      message: `You've reached the daily limit of 5 emails. Try again in ${retryAfter}.`,
+      retryAfter,                             // e.g. "2 hr 34 min"
+      msBeforeNextReset: ms,                  // raw ms for frontend countdown if needed
     });
   }
 }
