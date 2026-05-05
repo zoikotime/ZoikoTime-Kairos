@@ -9,6 +9,7 @@ import {
   savePrefs,
   saveSession,
 } from "../services/desktop";
+import { fetchHistory } from "../services/api";
 
 const defaultAssistantContext = {
   assistantName: "Koiris",
@@ -24,19 +25,13 @@ const defaultAssistantContext = {
   retentionHours: 24,
 };
 
-function getWelcomeContent(
-  language,
-  assistantContext = defaultAssistantContext,
-) {
+function getWelcomeContent(language, assistantContext = defaultAssistantContext) {
   return language === "hi"
     ? assistantContext.welcomeMessageHi || assistantContext.welcomeMessage
     : assistantContext.welcomeMessage;
 }
 
-function createWelcomeMessage(
-  language,
-  assistantContext = defaultAssistantContext,
-) {
+function createWelcomeMessage(language, assistantContext = defaultAssistantContext) {
   return [
     {
       id: "welcome",
@@ -47,6 +42,42 @@ function createWelcomeMessage(
   ];
 }
 
+// ─── Fetch chat history from backend ─────────────────────────────────────────
+async function fetchSessionHistory(sessionId) {
+  try {
+    const data = await fetchHistory(sessionId);
+    if (data.success && Array.isArray(data.messages) && data.messages.length > 0) {
+      return data.messages.map((m) => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        timestamp: m.timestamp,
+        metadata: m.meta || {},
+      }));
+    }
+    return null;
+  } catch (_err) {
+    return null;
+  }
+}
+
+// ─── FIX: persist mailSent in localStorage so it survives reload ──────────────
+function loadMailSent() {
+  try {
+    return localStorage.getItem("mailSent") === "true";
+  } catch {
+    return false;
+  }
+}
+
+function persistMailSent(value) {
+  try {
+    localStorage.setItem("mailSent", String(value));
+  } catch {
+    // ignore
+  }
+}
+
 export const useStore = create((set, get) => ({
   user: null,
   sessionId: null,
@@ -54,11 +85,14 @@ export const useStore = create((set, get) => ({
 
   isEditing: false,
 
-  // ─── Mail lock: one mail per conversation ─────────────────────────────────
-  // Reset on: new session login, logout, new conversation start
-  mailSent: false,
-  setMailSent: (v) => set({ mailSent: v }),
-  // ─────────────────────────────────────────────────────────────────────────
+  // ─── FIX Bug 1: load mailSent from localStorage on init ──────────────────
+  mailSent: loadMailSent(),
+
+  // ─── FIX Bug 1: also persist to localStorage whenever it changes ─────────
+  setMailSent: (v) => {
+    persistMailSent(v);
+    set({ mailSent: v });
+  },
 
   assistantContext: defaultAssistantContext,
   sessions: [],
@@ -70,7 +104,6 @@ export const useStore = create((set, get) => ({
   theme: "dark",
   historyOpen: false,
 
-  // ✅ EDIT ACTIONS
   startEditing: () => set({ isEditing: true, user: null }),
   stopEditing: () => set({ isEditing: false }),
 
@@ -99,20 +132,31 @@ export const useStore = create((set, get) => ({
     set({ sessionId, expiresAt: expiresAt || current.expiresAt });
   },
 
-  // ─── New login → reset mail lock for the new conversation ─────────────────
+  // ─── FIX Bug 3: fetch history from Supabase after login too ──────────────
   setUserSession: async (payload) => {
     await saveSession(payload);
     saveDraft(payload.user);
+
+    // Try to restore existing chat history for this session
+    let messages = null;
+    if (payload.sessionId) {
+      messages = await fetchSessionHistory(payload.sessionId);
+    }
 
     set({
       user: payload.user,
       sessionId: payload.sessionId,
       expiresAt: payload.expiresAt || null,
       onboardingDraft: payload.user,
-      messages: createWelcomeMessage(get().language, get().assistantContext),
+      // Restore history if found, else show welcome
+      messages:
+        messages && messages.length > 0
+          ? messages
+          : createWelcomeMessage(get().language, get().assistantContext),
       hydrated: true,
       isEditing: false,
-      mailSent: false, // ← reset on new session
+      // ─── FIX Bug 2: restore mailSent from localStorage, don't reset ──────
+      mailSent: loadMailSent(),
     });
   },
 
@@ -133,9 +177,16 @@ export const useStore = create((set, get) => ({
           theme,
           onboardingDraft: loadDraft(),
           messages: createWelcomeMessage(language, get().assistantContext),
-          mailSent: false, // ← reset on fresh hydration (no session)
+          // ─── FIX Bug 2: restore mailSent from localStorage ────────────────
+          mailSent: loadMailSent(),
         });
         return;
+      }
+
+      // ─── Try to restore chat history from Supabase ────────────────────────
+      let messages = null;
+      if (session.sessionId) {
+        messages = await fetchSessionHistory(session.sessionId);
       }
 
       set({
@@ -146,9 +197,13 @@ export const useStore = create((set, get) => ({
         theme,
         onboardingDraft: loadDraft() || session.user,
         hydrated: true,
-        messages: createWelcomeMessage(language, get().assistantContext),
-        // mailSent intentionally NOT reset here — if the app restarts mid-session
-        // the lock is already gone (store is in-memory). Fine for this use case.
+        // Restore history if found, else show welcome
+        messages:
+          messages && messages.length > 0
+            ? messages
+            : createWelcomeMessage(language, get().assistantContext),
+        // ─── FIX Bug 2: restore mailSent from localStorage ────────────────
+        mailSent: loadMailSent(),
       });
     } catch (err) {
       console.error("Session hydration failed:", err);
@@ -164,11 +219,7 @@ export const useStore = create((set, get) => ({
   replaceMessages: (messages) => set({ messages }),
 
   setLanguage: (language) => {
-    savePrefs({
-      language,
-      theme: get().theme,
-    });
-
+    savePrefs({ language, theme: get().theme });
     set((state) => ({
       language,
       messages:
@@ -180,12 +231,7 @@ export const useStore = create((set, get) => ({
 
   toggleTheme: () => {
     const nextTheme = get().theme === "dark" ? "light" : "dark";
-
-    savePrefs({
-      language: get().language,
-      theme: nextTheme,
-    });
-
+    savePrefs({ language: get().language, theme: nextTheme });
     set({ theme: nextTheme });
   },
 
@@ -203,14 +249,13 @@ export const useStore = create((set, get) => ({
 
   closeHistory: () => set({ historyOpen: false }),
 
-  // ─── Logout → reset mail lock ──────────────────────────────────────────────
   logout: async () => {
     if (get().user) {
       saveDraft(get().user);
     }
-
     await clearSession();
-
+    // ─── FIX: clear mailSent from localStorage on logout ─────────────────
+    persistMailSent(false);
     set({
       user: null,
       sessionId: null,
@@ -218,7 +263,7 @@ export const useStore = create((set, get) => ({
       messages: createWelcomeMessage(get().language, get().assistantContext),
       hydrated: true,
       isEditing: false,
-      mailSent: false, // ← reset on logout
+      mailSent: false,
     });
   },
 }));

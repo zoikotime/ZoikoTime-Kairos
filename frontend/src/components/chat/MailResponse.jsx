@@ -1,15 +1,41 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useStore } from "../../store/useStore";
 import toast from "react-hot-toast";
+import { fetchMailStatus, sendMail } from "../../services/api";
+
+function formatWaitTime(ms) {
+  const totalMinutes = Math.ceil(ms / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours > 0 && minutes > 0) return `${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h`;
+  return `${minutes}m`;
+}
 
 export default function MailResponse({ theme, onClose }) {
   const isDark = theme === "dark";
   const user = useStore((state) => state.user);
   const messages = useStore((state) => state.messages);
-  const mailSent = useStore((state) => state.mailSent);
-  const setMailSent = useStore((state) => state.setMailSent);
+  const sessionId = useStore((state) => state.sessionId);
+
+  // ─── Per-session mail tracking ────────────────────────────────────────────
+  const storageKey = `mailSent_${sessionId}`;
+  const [mailSent, setMailSentState] = useState(
+    () => (sessionId ? localStorage.getItem(storageKey) === "true" : false)
+  );
+  const setMailSent = (value) => {
+    if (sessionId) localStorage.setItem(storageKey, value ? "true" : "false");
+    setMailSentState(value);
+  };
 
   const [sending, setSending] = useState(false);
+  const [statusChecked, setStatusChecked] = useState(false);
+  const [limitState, setLimitState] = useState({
+    blocked: false,
+    remaining: null,
+    waitText: "",
+  });
 
   const fallbackIssue =
     messages
@@ -22,7 +48,48 @@ export default function MailResponse({ theme, onClose }) {
   const [body, setBody] = useState("");
   const toEmail = "support@zoikotime.com";
 
-  // ─── Guard: one mail per conversation ────────────────────────────────────
+  useEffect(() => {
+    let active = true;
+
+    async function checkMailStatus() {
+      if (!user?.email) {
+        if (active) setStatusChecked(true);
+        return;
+      }
+
+      try {
+        const data = await fetchMailStatus(user.email);
+        if (!active) return;
+
+        const waitText = data?.msBeforeNextReset
+          ? formatWaitTime(data.msBeforeNextReset)
+          : "";
+
+        setLimitState({
+          blocked: data?.allowed === false,
+          remaining: data?.remaining ?? null,
+          waitText,
+        });
+      } catch (_err) {
+        if (!active) return;
+        setLimitState({
+          blocked: false,
+          remaining: null,
+          waitText: "",
+        });
+      } finally {
+        if (active) setStatusChecked(true);
+      }
+    }
+
+    checkMailStatus();
+
+    return () => {
+      active = false;
+    };
+  }, [user?.email]);
+
+  // ─── Guard: one mail per conversation ─────────────────────────────────────
   if (mailSent) {
     return (
       <div
@@ -33,11 +100,7 @@ export default function MailResponse({ theme, onClose }) {
         }`}
       >
         <div className="text-2xl">📬</div>
-        <div
-          className={`font-semibold ${
-            isDark ? "text-[#4ade80]" : "text-[#16a34a]"
-          }`}
-        >
+        <div className={`font-semibold ${isDark ? "text-[#4ade80]" : "text-[#16a34a]"}`}>
           Mail Already Sent
         </div>
         <p className={`text-xs ${isDark ? "text-[#789483]" : "text-[#64748b]"}`}>
@@ -48,9 +111,7 @@ export default function MailResponse({ theme, onClose }) {
           <button
             onClick={onClose}
             className={`mt-2 text-xs underline transition-colors ${
-              isDark
-                ? "text-[#38bdf8] hover:text-[#7dd3fc]"
-                : "text-[#2563eb] hover:text-[#1d4ed8]"
+              isDark ? "text-[#38bdf8] hover:text-[#7dd3fc]" : "text-[#2563eb] hover:text-[#1d4ed8]"
             }`}
           >
             Back to chat
@@ -60,20 +121,57 @@ export default function MailResponse({ theme, onClose }) {
     );
   }
 
-  // ─── Send handler ─────────────────────────────────────────────────────────
+  if (statusChecked && limitState.blocked) {
+    return (
+      <div
+        className={`space-y-2 text-sm text-center p-4 rounded-xl border ${
+          isDark
+            ? "border-[rgba(80,214,123,0.2)] bg-[rgba(10,30,15,0.6)]"
+            : "border-[rgba(34,197,94,0.3)] bg-[rgba(240,253,244,0.8)]"
+        }`}
+      >
+        <div className="text-2xl">📭</div>
+        <div className={`font-semibold ${isDark ? "text-[#fbbf24]" : "text-[#b45309]"}`}>
+          Daily Mail Limit Reached
+        </div>
+        <p className={`text-xs ${isDark ? "text-[#789483]" : "text-[#64748b]"}`}>
+          You have already used the daily support mail limit.
+          {limitState.waitText ? ` Try again in ${limitState.waitText}.` : ""}
+        </p>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className={`mt-2 text-xs underline transition-colors ${
+              isDark ? "text-[#38bdf8] hover:text-[#7dd3fc]" : "text-[#2563eb] hover:text-[#1d4ed8]"
+            }`}
+          >
+            Back to chat
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // ─── Send handler ──────────────────────────────────────────────────────────
   const handleSend = async () => {
     if (!user?.email) {
       toast.error("User session missing. Please log in again.");
+      return;
+    }
+    if (!sessionId) {
+      toast.error("Start the chat first, then send at least one message before mailing support.");
       return;
     }
     if (!subject.trim()) {
       toast.error("Please enter a subject before sending.");
       return;
     }
+    if (limitState.blocked) {
+      return;
+    }
 
     setSending(true);
 
-    // Plain text fallback
     const chatHistoryText = messages
       .slice(-10)
       .map((m) => {
@@ -104,7 +202,6 @@ Chat History:
 ${chatHistoryText}
 `;
 
-    // HTML email body
     const chatHistoryHtml = messages
       .slice(-10)
       .map((m) => {
@@ -143,55 +240,60 @@ ${chatHistoryText}
 </div>`;
 
     try {
-      const res = await fetch("http://localhost:5000/api/mail/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId: useStore.getState().sessionId,
-          user: {
-            name: user?.name,
-            email: user?.email,
-            company: user?.company,
-          },
-          from: user.email,
-          to: toEmail,
-          subject,
-          body: finalBody,
-          html: htmlTemplate,
-        }),
+      const data = await sendMail({
+        sessionId,
+        user: {
+          name: user?.name,
+          email: user?.email,
+          company: user?.company,
+        },
+        to: toEmail,
+        subject,
+        body: finalBody,
+        html: htmlTemplate,
       });
 
-      const data = await res.json();
-
-      if (res.status === 429) {
-        // ─── Daily limit hit ────────────────────────────────────────────────
-        // data.retryAfter e.g. "2 hr 34 min"
-        toast.error(
-          `You've reached the limit of 5 mails per 24 hrs. Try again in ${data.retryAfter}.`,
-          { duration: 5000 }
-        );
+      if (data?.code === "EMAIL_LIMIT_REACHED") {
+        const waitTime = formatWaitTime(data.msBeforeNextReset || 86400 * 1000);
+        toast.error(`Daily mail limit reached. Try again in ${waitTime}.`, {
+          duration: 6000,
+        });
+        if (onClose) onClose();
         return;
       }
 
-      if (data.success) {
-        // ─── Success — lock this conversation ───────────────────────────────
+      if (data?.success) {
         setMailSent(true);
-        toast.success("Mail sent successfully! Our team will get back to you shortly.", {
+        toast.success("Mail sent! Our team will get back to you shortly.", {
           duration: 4000,
         });
         if (onClose) onClose();
       } else {
-        toast.error(data.message || "Failed to send. Please try again.");
+        toast.error(data?.message || "Failed to send. Please try again.");
       }
     } catch (err) {
       console.error("[MailResponse] Send error:", err);
-      toast.error("Something went wrong. Please check your connection and try again.");
+
+      const waitTime = err?.response?.data?.msBeforeNextReset;
+      if (err?.response?.status === 429) {
+        setLimitState({
+          blocked: true,
+          remaining: 0,
+          waitText: formatWaitTime(waitTime || 86400 * 1000),
+        });
+        return;
+      }
+
+      toast.error(
+        err?.response?.data?.message ||
+          "Something went wrong. Please check your connection and try again.",
+      );
     } finally {
       setSending(false);
     }
   };
 
-  // ─── Styles ───────────────────────────────────────────────────────────────
+  // ─── Styles ────────────────────────────────────────────────────────────────
   const inputClass = `w-full border rounded p-2 text-sm outline-none transition-all ${
     isDark
       ? "border-[rgba(80,214,123,0.18)] bg-[rgba(7,20,10,0.7)] text-[#cde8d4] placeholder-[#4a6b52] focus:border-[rgba(80,214,123,0.45)]"
@@ -204,10 +306,9 @@ ${chatHistoryText}
       : "border-[rgba(31,154,70,0.15)] bg-[rgba(31,154,70,0.04)] text-[#6b8f74]"
   }`;
 
-  // ─── Mail form ────────────────────────────────────────────────────────────
+  // ─── Mail form ─────────────────────────────────────────────────────────────
   return (
     <div className="space-y-2 text-sm">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className={`font-semibold ${isDark ? "text-[#d4f0dc]" : "text-[#0f3d20]"}`}>
           📩 Send Support Mail
@@ -227,10 +328,8 @@ ${chatHistoryText}
         )}
       </div>
 
-      {/* Name (read-only) */}
       <input value={user?.name || ""} disabled className={disabledInputClass} />
 
-      {/* From email (read-only) */}
       <input
         value={user?.email || ""}
         disabled
@@ -238,7 +337,6 @@ ${chatHistoryText}
         placeholder="from"
       />
 
-      {/* Subject */}
       <input
         value={subject}
         onChange={(e) => setSubject(e.target.value)}
@@ -247,7 +345,6 @@ ${chatHistoryText}
         required
       />
 
-      {/* Description */}
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
@@ -255,10 +352,9 @@ ${chatHistoryText}
         className={`${inputClass} h-20 resize-none`}
       />
 
-      {/* Send button */}
       <button
         onClick={handleSend}
-        disabled={sending}
+        disabled={sending || !statusChecked}
         className={`flex items-center gap-2 px-3 py-1.5 rounded text-white text-sm font-medium transition-all ${
           sending
             ? "bg-[#4ade80] cursor-not-allowed"
@@ -275,19 +371,8 @@ ${chatHistoryText}
               fill="none"
               viewBox="0 0 24 24"
             >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v8z"
-              />
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
             </svg>
             Sending...
           </>

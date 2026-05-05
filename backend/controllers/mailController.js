@@ -1,6 +1,7 @@
 const { sendMail } = require("../services/mailService");
 const { getSessionHistory } = require("../services/chatService");
 const { formatChatHistory } = require("../utils/formatChatHistory");
+const { getMailLimitStatus } = require("../middlewares/rateLimiter");
 
 const sendMailHandler = async (req, res) => {
   try {
@@ -34,4 +35,31 @@ const sendMailHandler = async (req, res) => {
   }
 };
 
-module.exports = { sendMailHandler };
+const getMailStatusHandler = async (req, res) => {
+  try {
+    const email = (req.query.email || "").trim().toLowerCase();
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        code: "MISSING_EMAIL",
+        message: "Email is required.",
+      });
+    }
+
+    const status = await getMailLimitStatus(email);
+    return res.status(200).json({
+      success: true,
+      ...status,
+    });
+  } catch (error) {
+    console.error("[MailController] Status error:", error.message);
+    return res.status(500).json({
+      success: false,
+      code: "SERVER_ERROR",
+      message: "Unable to check mail status right now.",
+    });
+  }
+};
+
+module.exports = { sendMailHandler, getMailStatusHandler };

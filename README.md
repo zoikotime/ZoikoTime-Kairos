@@ -1,45 +1,47 @@
 # ZT-CHATBOT
 
-ZoikoTime desktop chatbot scaffold with:
+ZoikoTime chatbot with:
 
-- `frontend`: React + Vite + Electron desktop shell
-- `backend`: Express + Mongo-ready chatbot backend
-- FAQ-style grounded chatbot responses for ZoikoTime desktop and web app questions
+- `frontend`: React + Vite + Electron shell
+- `backend`: Express API
+- Supabase-backed user, chat history, conversation, and mail rate-limit persistence
 
-## Current scope
+## What must exist in Supabase
 
-- Employee onboarding with name, work email, and company
-- Chatbot responses from a local ZoikoTime knowledge base
-- Conversation history persistence in memory and MongoDB when available
-- Human escalation flow intentionally kept as a placeholder for the next phase
+This project does not create tables automatically. You must create the schema in your Supabase project before history and mail counters will persist.
 
-## Project structure
+1. Open Supabase SQL Editor.
+2. Run `backend/supabase/schema.sql`.
+3. Copy `backend/.env.example` to `backend/.env`.
+4. Fill in:
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `JWT_SECRET`
+   - SMTP values for support mail
 
-```text
-ZT-CHATBOT/
-|-- frontend/
-|-- backend/
-|-- .env.example
-`-- README.md
-```
+## Local setup
 
-## Setup
-
-1. Copy `.env.example` to `.env`
-2. Install dependencies:
+1. Install dependencies:
    - `cd frontend && npm install`
    - `cd backend && npm install`
-3. Run development separately:
-   - frontend: `npm run dev`
-   - backend: `npm run node`
+2. Start the backend:
+   - `cd backend && npm run dev`
+3. Start the frontend:
+   - `cd frontend && npm run dev`
 
 ## Main routes
 
 - `POST /api/auth/verify`
 - `POST /api/chat`
 - `GET /api/chat/history/:sessionId`
+- `GET /api/chat/sessions?email=...`
+- `POST /api/mail/send`
 
-## Notes
+## Persistence notes
 
-- `nodemon` is still available in the backend via `npm run dev`
-- Manager lookup and human escalation can be connected later through your company API
+- User onboarding is stored in `users`.
+- Chat session summaries are stored in `conversations`.
+- Message history is stored in `chats`.
+- Daily support-mail limits are stored in `email_rate_limits`.
+- If Supabase is unavailable, chat can still work temporarily from in-memory fallback, but history will not survive restart.

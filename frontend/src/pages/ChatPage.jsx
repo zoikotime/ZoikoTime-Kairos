@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import { useStore } from "../store/useStore";
 import {
   endChatSession,
+  fetchMailStatus,
   fetchHistory,
   fetchUserSessions,
   sendMessage as sendChatMessage,
@@ -43,6 +44,16 @@ function normalizeMessage(message, index = 0) {
     timestamp: message.timestamp || new Date().toISOString(),
     nextAction: message.nextAction || null,
   };
+}
+
+function formatWaitTime(ms) {
+  const totalMinutes = Math.ceil(ms / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours > 0 && minutes > 0) return `${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h`;
+  return `${minutes}m`;
 }
 
 export default function ChatPage() {
@@ -172,7 +183,27 @@ export default function ChatPage() {
     setSessions(response.sessions || []);
   }, [setSessions, user?.email]);
 
-  const handleMailClick = useCallback(() => {
+  const handleMailClick = useCallback(async () => {
+    if (!user?.email) {
+      toast.error("User session missing. Please log in again.");
+      return;
+    }
+
+    try {
+      const status = await fetchMailStatus(user.email);
+      if (status?.allowed === false) {
+        toast.error(
+          `Support mail limit reached. Please try again in ${formatWaitTime(
+            status.msBeforeNextReset || 86400 * 1000,
+          )}.`,
+          { duration: 6000 },
+        );
+        return;
+      }
+    } catch (_err) {
+      // If status check fails, still allow the user to open the panel.
+    }
+
     const alreadyOpen = messages.some((m) => m.isMail === true);
     if (alreadyOpen) return;
 
@@ -192,7 +223,7 @@ export default function ChatPage() {
         content: <MailResponse theme={theme} onClose={closeMail} />,
       },
     ]);
-  }, [messages, replaceMessages, theme]);
+  }, [messages, replaceMessages, theme, user?.email]);
 
   const handleNewChat = useCallback(async () => {
     if (sessionId) {

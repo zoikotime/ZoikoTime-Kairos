@@ -63,4 +63,11 @@ export async function sendMail({ sessionId, user, to, subject, body }) {
   return data;
 }
 
+export async function fetchMailStatus(email) {
+  const { data } = await api.get("/mail/status", {
+    params: { email },
+  });
+  return data;
+}
+
 export default api;

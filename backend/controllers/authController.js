@@ -27,31 +27,34 @@ async function verifyEmployee(req, res, next) {
       employeeId,
     };
 
-    try {
-      // ✅ Replaced Mongoose findOneAndUpdate → Supabase upsert
-      const user = await User.upsert({
-        name: userPayload.name,
-        email: userPayload.email,
-        company: userPayload.company,
-        employeeId: userPayload.employeeId,
-      });
-
-      userPayload = {
-        name: user.name,
-        email: user.email,
-        company: user.company,
-        employeeId: user.employee_id, // Supabase uses snake_case column names
-      };
-    } catch (_error) {
-      // Continue without Supabase persistence during initial local setup.
-    }
-
     const activeConversation = await findOrCreateConversationForUser({
       name: userPayload.name,
       email: userPayload.email,
       company: userPayload.company,
       employeeId: userPayload.employeeId,
     });
+
+    try {
+      const user = await User.upsert({
+        name: userPayload.name,
+        email: userPayload.email,
+        company: userPayload.company,
+        employeeId: userPayload.employeeId,
+        sessionId: activeConversation.sessionId,
+      });
+
+      userPayload = {
+        name: user.name,
+        email: user.email,
+        company: user.company,
+        employeeId: user.employee_id,
+      };
+    } catch (persistError) {
+      console.error(
+        "[AuthController] Failed to persist user:",
+        persistError.message,
+      );
+    }
 
     const token = jwt.sign(
       {

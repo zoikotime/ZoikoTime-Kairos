@@ -5,6 +5,7 @@ const {
   createSession,
   getChatHistory,
   getChatUiContext,
+  getTrackedPrompts,
   getUserSessions,
   removeSession,
   sendChatMessage,
@@ -20,15 +21,13 @@ router.post(
     body("message").trim().notEmpty().withMessage("Message is required."),
     body("user.email").isEmail().withMessage("Valid email required"),
   ],
-  sendChatMessage
+  sendChatMessage,
 );
 
 router.get("/context", getChatUiContext);
 router.get("/sessions", getUserSessions);
-
-// ⚠️ OPTIONAL: You can remove this later (not needed anymore)
+router.get("/new-prompts", getTrackedPrompts);
 router.post("/sessions", createSession);
-
 router.patch("/sessions/:sessionId/end", closeSession);
 router.delete("/sessions/:sessionId", removeSession);
 router.get("/history/:sessionId", getChatHistory);

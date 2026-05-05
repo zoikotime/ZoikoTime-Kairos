@@ -5,9 +5,11 @@ const {
   endConversation,
   generateChatReply,
   getChatContext,
+  getUnknownPrompts,
   getSessionHistory,
   listUserConversations,
   saveMessage,
+  trackUnknownPrompt,
 } = require("../services/chatService");
 
 // 🔥 MAIN CHAT FUNCTION
@@ -67,6 +69,10 @@ async function sendChatMessage(req, res, next) {
       };
     }
 
+    if (reply.intent === "fallback") {
+      await trackUnknownPrompt(message);
+    }
+
     // ✅ SAVE ASSISTANT MESSAGE
     await saveMessage({
       sessionId,
@@ -91,6 +97,18 @@ async function sendChatMessage(req, res, next) {
     });
   } catch (error) {
     console.error("❌ ERROR in sendChatMessage:", error);
+    next(error);
+  }
+}
+
+async function getTrackedPrompts(_req, res, next) {
+  try {
+    const prompts = await getUnknownPrompts();
+    return res.json({
+      success: true,
+      prompts,
+    });
+  } catch (error) {
     next(error);
   }
 }
@@ -200,6 +218,7 @@ module.exports = {
   closeSession,
   createSession,
   getChatUiContext,
+  getTrackedPrompts,
   sendChatMessage,
   getChatHistory,
   getUserSessions,

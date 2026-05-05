@@ -1,9 +1,8 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { v4: uuidv4 } = require("uuid");
-const { Op } = require("sequelize");
-const Chat = require("../models/Chat");
-const Conversation = require("../models/Conversation");
+const { supabase } = require("../config/db");
+const NewPrompt = require("../models/NewPrompt");
 
 // FIXED: Point to correct knowledge.json location (root, not /data)
 const knowledgePath = path.resolve(__dirname, "..", "data", "knowledge.json");
@@ -42,6 +41,18 @@ function tokenize(text = "") {
   return normalizeText(text).split(" ").filter(Boolean);
 }
 
+async function trackUnknownPrompt(message) {
+  const prompt = normalizeText(message);
+  if (!prompt || !supabase) return null;
+
+  try {
+    return await NewPrompt.incrementOrCreate(prompt);
+  } catch (error) {
+    console.error("[ChatService] Failed to track unknown prompt:", error.message);
+    return null;
+  }
+}
+
 function personalizeText(text = "") {
   const assistantDisplayName =
     knowledgeDocument?._meta?.assistantName || "Koiris";
@@ -55,7 +66,7 @@ function slugify(value = "") {
 }
 
 function createExpiryDate(base = Date.now()) {
-  return new Date(base + SESSION_TTL_MS);
+  return new Date(base + SESSION_TTL_MS).toISOString();
 }
 
 function summarizeText(text = "", maxLength = 110) {
@@ -198,8 +209,8 @@ function createConversationSnapshot({
     preview: "",
     messageCount: 0,
     status: "active",
-    startedAt: new Date(),
-    lastMessageAt: new Date(),
+    startedAt: new Date().toISOString(),
+    lastMessageAt: new Date().toISOString(),
     expiresAt: createExpiryDate(),
   };
 }
@@ -217,13 +228,15 @@ function getInMemoryConversation(sessionId) {
 
 async function upsertConversation({ sessionId, user, title, preview, status }) {
   const expiresAt = createExpiryDate();
+  const now = new Date().toISOString();
+
   const payload = {
     sessionId,
     userEmail: user?.email || "unknown@local",
     userName: user?.name || "",
     company: user?.company || "",
     employeeId: user?.employeeId || "",
-    lastMessageAt: new Date(),
+    lastMessageAt: now,
     expiresAt,
   };
   if (title) payload.title = summarizeText(title, 70);
@@ -242,44 +255,49 @@ async function upsertConversation({ sessionId, user, title, preview, status }) {
   inMemoryConversations.set(sessionId, nextConversation);
 
   try {
-    // ✅ Sequelize: findOrCreate then update
-    const [record, created] = await Conversation.findOrCreate({
-      where: { sessionId },
-      defaults: {
-        ...payload,
+    if (!supabase) return nextConversation;
+
+    const { data: existing } = await supabase
+      .from("conversations")
+      .select("*")
+      .eq("session_id", sessionId)
+      .single();
+
+    if (existing) {
+      await supabase
+        .from("conversations")
+        .update({
+          session_id: sessionId,
+          user_email: payload.userEmail,
+          user_name: payload.userName,
+          company: payload.company,
+          employee_id: payload.employeeId,
+          last_message_at: payload.lastMessageAt,
+          expires_at: payload.expiresAt,
+          status: payload.status || existing.status || current.status,
+          title: payload.title || existing.title || current.title,
+          preview:
+            payload.preview !== undefined
+              ? payload.preview
+              : existing.preview || current.preview,
+        })
+        .eq("session_id", sessionId);
+    } else {
+      await supabase.from("conversations").insert({
+        session_id: sessionId,
+        user_email: payload.userEmail,
+        user_name: payload.userName,
+        company: payload.company,
+        employee_id: payload.employeeId,
         title: payload.title || current.title || "New conversation",
         preview: payload.preview ?? current.preview ?? "",
-        messageCount: current.messageCount || 0,
-        startedAt: current.startedAt || new Date(),
+        message_count: current.messageCount || 0,
+        started_at: current.startedAt || now,
+        last_message_at: payload.lastMessageAt,
+        expires_at: payload.expiresAt,
         status: status || "active",
-      },
-    });
-
-    if (!created) {
-      await record.update({
-        ...payload,
-        title: payload.title || record.title || current.title,
-        preview:
-          payload.preview !== undefined
-            ? payload.preview
-            : record.preview || current.preview,
       });
     }
-
-    inMemoryConversations.set(sessionId, {
-      sessionId: record.sessionId,
-      userEmail: record.userEmail,
-      userName: record.userName,
-      company: record.company,
-      employeeId: record.employeeId,
-      title: record.title,
-      preview: record.preview,
-      messageCount: record.messageCount,
-      status: record.status,
-      startedAt: record.startedAt,
-      lastMessageAt: record.lastMessageAt,
-      expiresAt: record.expiresAt,
-    });
   } catch (_error) {}
 
   return nextConversation;
@@ -303,46 +321,55 @@ async function incrementConversationMessageCount(
         ? summarizeText(content, 70)
         : current.title;
 
+  const now = new Date().toISOString();
   const nextConversation = {
     ...current,
     title: nextTitle || "New conversation",
     preview: summarizeText(content, 150),
     messageCount: nextCount,
-    lastMessageAt: new Date(),
+    lastMessageAt: now,
     expiresAt: createExpiryDate(),
   };
   inMemoryConversations.set(sessionId, nextConversation);
 
   try {
-    // ✅ Sequelize: findOrCreate then increment + update separately
-    const [record, created] = await Conversation.findOrCreate({
-      where: { sessionId },
-      defaults: {
-        userEmail: user?.email || "unknown@local",
-        userName: user?.name || "",
-        company: user?.company || "",
-        employeeId: user?.employeeId || "",
-        title: nextConversation.title,
-        preview: nextConversation.preview,
-        messageCount: 1,
-        status: "active",
-        startedAt: current.startedAt || new Date(),
-        lastMessageAt: nextConversation.lastMessageAt,
-        expiresAt: nextConversation.expiresAt,
-      },
-    });
+    if (!supabase) return;
 
-    if (!created) {
-      await record.increment("messageCount", { by: 1 });
-      await record.update({
-        userEmail: user?.email || "unknown@local",
-        userName: user?.name || "",
+    const { data: existing } = await supabase
+      .from("conversations")
+      .select("message_count")
+      .eq("session_id", sessionId)
+      .single();
+
+    if (existing) {
+      await supabase
+        .from("conversations")
+        .update({
+          user_email: user?.email || "unknown@local",
+          user_name: user?.name || "",
+          company: user?.company || "",
+          employee_id: user?.employeeId || "",
+          title: nextConversation.title,
+          preview: nextConversation.preview,
+          message_count: (existing.message_count || 0) + 1,
+          last_message_at: nextConversation.lastMessageAt,
+          expires_at: nextConversation.expiresAt,
+        })
+        .eq("session_id", sessionId);
+    } else {
+      await supabase.from("conversations").insert({
+        session_id: sessionId,
+        user_email: user?.email || "unknown@local",
+        user_name: user?.name || "",
         company: user?.company || "",
-        employeeId: user?.employeeId || "",
+        employee_id: user?.employeeId || "",
         title: nextConversation.title,
         preview: nextConversation.preview,
-        lastMessageAt: nextConversation.lastMessageAt,
-        expiresAt: nextConversation.expiresAt,
+        message_count: 1,
+        status: "active",
+        started_at: current.startedAt || now,
+        last_message_at: nextConversation.lastMessageAt,
+        expires_at: nextConversation.expiresAt,
       });
     }
   } catch (_error) {}
@@ -361,18 +388,21 @@ async function createConversationForUser(user) {
 }
 
 async function findOrCreateConversationForUser(user) {
-  const now = new Date();
+  const now = new Date().toISOString();
   try {
-    // ✅ Sequelize: use Op.gt instead of $gt
-    const existing = await Conversation.findOne({
-      where: {
-        userEmail: user?.email || "unknown@local",
-        expiresAt: { [Op.gt]: now },
-      },
-      order: [["lastMessageAt", "DESC"]],
-    });
+    if (!supabase) throw new Error("Supabase not configured");
+
+    const { data: existing } = await supabase
+      .from("conversations")
+      .select("session_id, expires_at")
+      .eq("user_email", user?.email || "unknown@local")
+      .gt("expires_at", now)
+      .order("last_message_at", { ascending: false })
+      .limit(1)
+      .single();
+
     if (existing)
-      return { sessionId: existing.sessionId, expiresAt: existing.expiresAt };
+      return { sessionId: existing.session_id, expiresAt: existing.expires_at };
   } catch (_error) {}
 
   const memoryConversation = [...inMemoryConversations.values()]
@@ -396,24 +426,24 @@ async function endConversation(sessionId, userEmail) {
   const conversation = getInMemoryConversation(sessionId);
   if (conversation && (!userEmail || conversation.userEmail === userEmail)) {
     conversation.status = "ended";
-    conversation.lastMessageAt = new Date();
+    conversation.lastMessageAt = new Date().toISOString();
     inMemoryConversations.set(sessionId, conversation);
   }
   try {
-    // ✅ Sequelize: use update() with where clause
-    await Conversation.update(
-      {
+    if (!supabase) return;
+
+    let query = supabase
+      .from("conversations")
+      .update({
         status: "ended",
-        lastMessageAt: new Date(),
-        expiresAt: createExpiryDate(),
-      },
-      {
-        where: {
-          sessionId,
-          ...(userEmail ? { userEmail } : {}),
-        },
-      },
-    );
+        last_message_at: new Date().toISOString(),
+        expires_at: createExpiryDate(),
+      })
+      .eq("session_id", sessionId);
+
+    if (userEmail) query = query.eq("user_email", userEmail);
+
+    await query;
   } catch (_error) {}
 }
 
@@ -421,13 +451,19 @@ async function deleteConversation(sessionId, userEmail) {
   inMemoryConversations.delete(sessionId);
   inMemoryHistory.delete(sessionId);
   try {
-    // ✅ Sequelize: use destroy() with where clause
-    await Conversation.destroy({
-      where: { sessionId, ...(userEmail ? { userEmail } : {}) },
-    });
-    await Chat.destroy({
-      where: { sessionId, ...(userEmail ? { userEmail } : {}) },
-    });
+    let convQuery = supabase
+      .from("conversations")
+      .delete()
+      .eq("session_id", sessionId);
+    if (userEmail) convQuery = convQuery.eq("user_email", userEmail);
+    await convQuery;
+
+    let chatQuery = supabase
+      .from("chats")
+      .delete()
+      .eq("session_id", sessionId);
+    if (userEmail) chatQuery = chatQuery.eq("user_email", userEmail);
+    await chatQuery;
   } catch (_error) {}
 }
 
@@ -452,26 +488,25 @@ async function listUserConversations(userEmail) {
     }));
 
   try {
-    // ✅ Sequelize: use findAll() with where + Op.gt
-    const conversations = await Conversation.findAll({
-      where: {
-        userEmail,
-        expiresAt: { [Op.gt]: new Date() },
-      },
-      order: [["lastMessageAt", "DESC"]],
-      raw: true,
-    });
+    if (!supabase) throw new Error("Supabase not configured");
 
-    if (conversations.length) {
+    const { data: conversations } = await supabase
+      .from("conversations")
+      .select("*")
+      .eq("user_email", userEmail)
+      .gt("expires_at", new Date().toISOString())
+      .order("last_message_at", { ascending: false });
+
+    if (conversations && conversations.length) {
       return conversations.map((conversation) => ({
-        sessionId: conversation.sessionId,
+        sessionId: conversation.session_id,
         title: conversation.title,
         preview: conversation.preview,
-        messageCount: conversation.messageCount,
+        messageCount: conversation.message_count,
         status: conversation.status,
-        startedAt: conversation.startedAt,
-        lastMessageAt: conversation.lastMessageAt,
-        expiresAt: conversation.expiresAt,
+        startedAt: conversation.started_at,
+        lastMessageAt: conversation.last_message_at,
+        expiresAt: conversation.expires_at,
       }));
     }
   } catch (_error) {}
@@ -529,6 +564,17 @@ function generateChatReply(message, language = "en") {
   };
 }
 
+async function getUnknownPrompts() {
+  if (!supabase) return [];
+
+  try {
+    return await NewPrompt.listAll();
+  } catch (error) {
+    console.error("[ChatService] Failed to load unknown prompts:", error.message);
+    return [];
+  }
+}
+
 function getChatContext() {
   const assistantName = personalizeText(
     knowledgeDocument._meta?.assistantName || "Koiris",
@@ -582,14 +628,15 @@ async function saveMessage({
   );
 
   try {
-    // ✅ Sequelize: create() works the same way
-    await Chat.create({
-      sessionId,
-      userEmail,
+    if (!supabase) return message;
+
+    await supabase.from("chats").insert({
+      session_id: sessionId,
+      user_email: userEmail,
       role,
       content,
       metadata,
-      expiresAt,
+      expires_at: expiresAt,
     });
   } catch (_error) {}
 
@@ -599,22 +646,22 @@ async function saveMessage({
 async function getSessionHistory(sessionId) {
   const fallbackMessages = inMemoryHistory.get(sessionId) || [];
   try {
-    // ✅ Sequelize: findAll with order, raw for plain objects
-    const dbMessages = await Chat.findAll({
-      where: { sessionId },
-      order: [["createdAt", "ASC"]],
-      raw: true,
-    });
+    if (!supabase) throw new Error("Supabase not configured");
 
-    if (!dbMessages.length) return fallbackMessages;
+    const { data: dbMessages } = await supabase
+      .from("chats")
+      .select("*")
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: true });
+
+    if (!dbMessages || !dbMessages.length) return fallbackMessages;
 
     return dbMessages.map((entry) => ({
-      // ✅ PostgreSQL uses `id` not `_id`
       id: entry.id.toString(),
       role: entry.role,
       content: entry.content,
       meta: entry.metadata,
-      timestamp: entry.createdAt,
+      timestamp: entry.created_at,
     }));
   } catch (_error) {
     return fallbackMessages.map((entry) => ({
@@ -636,7 +683,9 @@ module.exports = {
   findOrCreateConversationForUser,
   generateChatReply,
   getChatContext,
+  getUnknownPrompts,
   getSessionHistory,
   listUserConversations,
   saveMessage,
+  trackUnknownPrompt,
 };
