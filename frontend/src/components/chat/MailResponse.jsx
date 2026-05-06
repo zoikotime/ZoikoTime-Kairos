@@ -21,8 +21,8 @@ export default function MailResponse({ theme, onClose }) {
 
   // ─── Per-session mail tracking ────────────────────────────────────────────
   const storageKey = `mailSent_${sessionId}`;
-  const [mailSent, setMailSentState] = useState(
-    () => (sessionId ? localStorage.getItem(storageKey) === "true" : false)
+  const [mailSent, setMailSentState] = useState(() =>
+    sessionId ? localStorage.getItem(storageKey) === "true" : false,
   );
   const setMailSent = (value) => {
     if (sessionId) localStorage.setItem(storageKey, value ? "true" : "false");
@@ -100,10 +100,14 @@ export default function MailResponse({ theme, onClose }) {
         }`}
       >
         <div className="text-2xl">📬</div>
-        <div className={`font-semibold ${isDark ? "text-[#4ade80]" : "text-[#16a34a]"}`}>
+        <div
+          className={`font-semibold ${isDark ? "text-[#4ade80]" : "text-[#16a34a]"}`}
+        >
           Mail Already Sent
         </div>
-        <p className={`text-xs ${isDark ? "text-[#789483]" : "text-[#64748b]"}`}>
+        <p
+          className={`text-xs ${isDark ? "text-[#789483]" : "text-[#64748b]"}`}
+        >
           Only one support mail is allowed per conversation. Start a new
           conversation if you need further assistance.
         </p>
@@ -111,7 +115,9 @@ export default function MailResponse({ theme, onClose }) {
           <button
             onClick={onClose}
             className={`mt-2 text-xs underline transition-colors ${
-              isDark ? "text-[#38bdf8] hover:text-[#7dd3fc]" : "text-[#2563eb] hover:text-[#1d4ed8]"
+              isDark
+                ? "text-[#38bdf8] hover:text-[#7dd3fc]"
+                : "text-[#2563eb] hover:text-[#1d4ed8]"
             }`}
           >
             Back to chat
@@ -131,10 +137,14 @@ export default function MailResponse({ theme, onClose }) {
         }`}
       >
         <div className="text-2xl">📭</div>
-        <div className={`font-semibold ${isDark ? "text-[#fbbf24]" : "text-[#b45309]"}`}>
+        <div
+          className={`font-semibold ${isDark ? "text-[#fbbf24]" : "text-[#b45309]"}`}
+        >
           Daily Mail Limit Reached
         </div>
-        <p className={`text-xs ${isDark ? "text-[#789483]" : "text-[#64748b]"}`}>
+        <p
+          className={`text-xs ${isDark ? "text-[#789483]" : "text-[#64748b]"}`}
+        >
           You have already used the daily support mail limit.
           {limitState.waitText ? ` Try again in ${limitState.waitText}.` : ""}
         </p>
@@ -142,7 +152,9 @@ export default function MailResponse({ theme, onClose }) {
           <button
             onClick={onClose}
             className={`mt-2 text-xs underline transition-colors ${
-              isDark ? "text-[#38bdf8] hover:text-[#7dd3fc]" : "text-[#2563eb] hover:text-[#1d4ed8]"
+              isDark
+                ? "text-[#38bdf8] hover:text-[#7dd3fc]"
+                : "text-[#2563eb] hover:text-[#1d4ed8]"
             }`}
           >
             Back to chat
@@ -159,7 +171,9 @@ export default function MailResponse({ theme, onClose }) {
       return;
     }
     if (!sessionId) {
-      toast.error("Start the chat first, then send at least one message before mailing support.");
+      toast.error(
+        "Start the chat first, then send at least one message before mailing support.",
+      );
       return;
     }
     if (!subject.trim()) {
@@ -310,7 +324,9 @@ ${chatHistoryText}
   return (
     <div className="space-y-2 text-sm">
       <div className="flex items-center justify-between">
-        <div className={`font-semibold ${isDark ? "text-[#d4f0dc]" : "text-[#0f3d20]"}`}>
+        <div
+          className={`font-semibold ${isDark ? "text-[#d4f0dc]" : "text-[#0f3d20]"}`}
+        >
           📩 Send Support Mail
         </div>
         {onClose && (
@@ -371,8 +387,19 @@ ${chatHistoryText}
               fill="none"
               viewBox="0 0 24 24"
             >
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v8z"
+              />
             </svg>
             Sending...
           </>
