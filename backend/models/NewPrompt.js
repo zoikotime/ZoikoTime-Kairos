@@ -9,7 +9,7 @@ const NewPrompt = {
       .single();
 
     if (error && error.code !== "PGRST116") throw error;
-    return data || null;
+    return data || null;       
   },
 
   async create(prompt) {

@@ -8,79 +8,76 @@ function extractDescription(raw = "") {
   return match ? match[1].trim() : raw;
 }
 
+function escapeHtml(value = "") {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function cleanTranscriptMessage(message = "", role = "assistant") {
+  const text = String(message || "").replace(/\s+/g, " ").trim();
+  if (role !== "assistant") return text;
+
+  return text
+    .replace(/•\s*\d+️⃣[\s\S]*$/u, "")
+    .replace(/Just type a number or describe what you need!?[\s\S]*$/i, "")
+    .trim();
+}
+
 function formatChatHistory(
   messages = [],
   user = {},
   subject = "",
   description = "",
+  translation = {},
 ) {
   const cleanDesc = extractDescription(description);
+  const translatedSubject = translation.translatedSubject || subject || "N/A";
+  const translatedDescription =
+    translation.translatedDescription || cleanDesc || "N/A";
+  const originalLanguage = translation.originalLanguage || "Unknown";
+  const wasTranslated = Boolean(translation.wasTranslated);
 
-  // ─── Plain text conversation like Stripe chat transcript ───────────────────
   const formattedMessages = messages
     .map((msg) => {
       const isUser = msg.role === "user";
       const senderName = isUser ? user.name || "User" : "Bot";
-      const time = msg.timestamp ? `(${formatTime(msg.timestamp)}) ` : "";
-      return `${time}<b>${senderName}</b>: ${msg.content || ""}`;
+      const time = msg.timestamp ? formatTime(msg.timestamp) : "--:--";
+      const messageText = escapeHtml(
+        cleanTranscriptMessage(
+          msg.translatedContent || msg.content || "",
+          msg.role,
+        ),
+      );
+      const color = isUser ? "#1d4ed8" : "#166534";
+      return `<div style="color:${color};">${escapeHtml(time)} ${escapeHtml(senderName)}: ${messageText}</div>`;
     })
-    .join("<br/>");
+    .join("");
 
   return `
-  <div style="font-family:Arial, sans-serif; background:#f2f2f2; padding:30px;">
-    <div style="max-width:620px; margin:0 auto;">
-
-      <!-- HEADER -->
-      <div style="
-        background:#1fa855;
-        color:white;
-        padding:14px 16px;
-        border-radius:8px 8px 0 0;
-        font-size:16px;
-        font-weight:bold;
-      ">
-        ZoikoTime Support Request
-      </div>
-
-      <!-- BODY -->
-      <div style="
-        background:white;
-        padding:18px;
-        border:1px solid #ddd;
-        border-top:none;
-        border-radius:0 0 8px 8px;
-      ">
-
-        <p><b>User:</b> ${user.name || "N/A"}</p>
-        <p><b>Email:</b> ${user.email || "N/A"}</p>
-
-        <hr style="margin:12px 0;" />
-
-        <p>🔴<b>Issue:</b></p>
-        <p>${subject || "N/A"}</p>
-
-        <p><b>Description:</b></p>
-        <p>${cleanDesc || "N/A"}</p>
-
-        <hr style="margin:12px 0;" />
-
-        <p><b>Chat Conversation:</b></p>
-
-        <!-- PLAIN TEXT CHAT TRANSCRIPT -->
-        <div style="
-          background:#f9f9f9;
-          padding:12px 16px;
-          border:1px solid #e0e0e0;
-          border-radius:6px;
-          margin-top:8px;
-          font-size:13px;
-          line-height:2;
-          color:#333;
-        ">
-          ${formattedMessages || "<span style='color:#666;'>No messages</span>"}
-        </div>
-
-      </div>
+  <div style="font-family:Arial, sans-serif; padding:16px; color:#111;">
+    <p><b>User:</b> ${escapeHtml(user.name || "N/A")}</p>
+    <p><b>Email:</b> ${escapeHtml(user.email || "N/A")}</p>
+    <p><b>Original Language:</b> ${escapeHtml(originalLanguage)}</p>
+    <p><b>Translated To:</b> English</p>
+    <p><b>Issue In English:</b> ${escapeHtml(translatedSubject)}</p>
+    ${
+      wasTranslated
+        ? `<p><b>Original Issue:</b> ${escapeHtml(subject || "N/A")}</p>`
+        : ""
+    }
+    <p><b>Description In English:</b> ${escapeHtml(translatedDescription)}</p>
+    ${
+      wasTranslated
+        ? `<p><b>Original Description:</b> ${escapeHtml(cleanDesc || "N/A")}</p>`
+        : ""
+    }
+    <p><b>Chat Conversation:</b></p>
+    <div>
+      ${formattedMessages || "<div>No messages</div>"}
     </div>
   </div>
   `;

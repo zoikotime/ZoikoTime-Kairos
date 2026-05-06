@@ -3,6 +3,7 @@ const path = require("node:path");
 const { v4: uuidv4 } = require("uuid");
 const { supabase } = require("../config/db");
 const NewPrompt = require("../models/NewPrompt");
+const { normalizePrompt } = require("../utils/translate");
 
 // FIXED: Point to correct knowledge.json location (root, not /data)
 const knowledgePath = path.resolve(__dirname, "..", "data", "knowledge.json");
@@ -42,10 +43,13 @@ function tokenize(text = "") {
 }
 
 async function trackUnknownPrompt(message) {
-  const prompt = normalizeText(message);
-  if (!prompt || !supabase) return null;
+  if (!message || !message.trim() || !supabase) return null;
 
   try {
+    const normalized = await normalizePrompt(message);
+    const prompt = normalizeText(normalized.normalizedText);
+    if (!prompt) return null;
+
     return await NewPrompt.incrementOrCreate(prompt);
   } catch (error) {
     console.error("[ChatService] Failed to track unknown prompt:", error.message);

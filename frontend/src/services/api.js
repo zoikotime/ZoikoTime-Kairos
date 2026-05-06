@@ -52,14 +52,20 @@ export async function deleteChatSession(sessionId, userEmail) {
 // Backend keys rate limit by user.email — always include it.
 // Backend builds the HTML itself from sessionId, so we only send metadata.
 export async function sendMail({ sessionId, user, to, subject, body }) {
-  const { data } = await api.post("/mail/send", {
-    sessionId,
-    user,
-    to,
-    subject,
-    body,
-    email: user?.email, // explicit top-level key for rate limiter middleware
-  });
+  const { data } = await api.post(
+    "/mail/send",
+    {
+      sessionId,
+      user,
+      to,
+      subject,
+      body,
+      email: user?.email, // explicit top-level key for rate limiter middleware
+    },
+    {
+      timeout: 30000,
+    },
+  );
   return data;
 }
 
