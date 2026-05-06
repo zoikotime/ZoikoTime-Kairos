@@ -1,21 +1,36 @@
 import { useRef } from "react";
 import { HiOutlinePaperAirplane, HiOutlineTrash } from "react-icons/hi2";
 
-export default function Composer({ input, setInput, isTyping, onSend, onClear, theme }) {
+export default function Composer({
+  input,
+  setInput,
+  isTyping,
+  onSend,
+  onClear,
+  theme,
+}) {
   const textareaRef = useRef(null);
   const isDark = theme === "dark";
 
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    if (!input.trim() || isTyping) return;
+    onSend();
+  };
+
   const handleKeyDown = (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      onSend();
+      handleSubmit(event);
     }
   };
 
   return (
-    <div
+    <form
+      onSubmit={handleSubmit}
       className={`flex-shrink-0 border-t px-4 py-3.5 sm:px-5 sm:py-4 ${
-        isDark ? "border-[rgba(255,255,255,0.05)]" : "border-[rgba(31,154,70,0.16)]"
+        isDark
+          ? "border-[rgba(255,255,255,0.05)]"
+          : "border-[rgba(31,154,70,0.16)]"
       }`}
     >
       <div
@@ -31,19 +46,25 @@ export default function Composer({ input, setInput, isTyping, onSend, onClear, t
           onChange={(event) => {
             setInput(event.target.value);
             event.target.style.height = "auto";
-            event.target.style.height = `${Math.min(event.target.scrollHeight, 130)}px`;
+            event.target.style.height = `${Math.min(
+              event.target.scrollHeight,
+              130,
+            )}px`;
           }}
           onKeyDown={handleKeyDown}
           placeholder="Ask Kioris anything about ZoikoTime..."
           rows={1}
           disabled={isTyping}
           className={`flex-1 resize-none bg-transparent text-sm leading-relaxed outline-none disabled:opacity-50 ${
-            isDark ? "text-[#e5ffe9] placeholder-[#6c8d73]" : "text-[#12341c] placeholder-[#6e9978]"
+            isDark
+              ? "text-[#e5ffe9] placeholder-[#6c8d73]"
+              : "text-[#12341c] placeholder-[#6e9978]"
           }`}
           style={{ maxHeight: "130px", minHeight: "22px" }}
         />
 
         <button
+          type="button"
           onClick={onClear}
           title="Clear chat"
           className={`orbit-icon-button mb-0.5 h-8 w-8 flex-shrink-0 rounded-[11px] ${
@@ -56,7 +77,7 @@ export default function Composer({ input, setInput, isTyping, onSend, onClear, t
         </button>
 
         <button
-          onClick={onSend}
+          type="submit"
           disabled={!input.trim() || isTyping}
           title="Send"
           className="orbit-send-button mb-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[11px] transition-all hover:opacity-90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
@@ -65,9 +86,13 @@ export default function Composer({ input, setInput, isTyping, onSend, onClear, t
         </button>
       </div>
 
-      <p className={`mt-2 select-none text-center text-[0.58rem] tracking-wide ${isDark ? "text-[#587060]" : "text-[#78a285]"}`}>
+      <p
+        className={`mt-2 select-none text-center text-[0.58rem] tracking-wide ${
+          isDark ? "text-[#587060]" : "text-[#78a285]"
+        }`}
+      >
         Kioris · ZoikoTime AI · Source-grounded · Governed responses
       </p>
-    </div>
+    </form>
   );
 }
