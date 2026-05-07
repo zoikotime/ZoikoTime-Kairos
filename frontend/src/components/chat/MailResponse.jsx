@@ -170,12 +170,6 @@ export default function MailResponse({ theme, onClose }) {
       toast.error("User session missing. Please log in again.");
       return;
     }
-    if (!sessionId) {
-      toast.error(
-        "Start the chat first, then send at least one message before mailing support.",
-      );
-      return;
-    }
     if (!subject.trim()) {
       toast.error("Please enter a subject before sending.");
       return;
@@ -185,6 +179,8 @@ export default function MailResponse({ theme, onClose }) {
     }
 
     setSending(true);
+
+    const effectiveSessionId = sessionId || `manual_${user.email}_${Date.now()}`;
 
     const chatHistoryText = messages
       .slice(-10)
@@ -255,7 +251,7 @@ ${chatHistoryText}
 
     try {
       const data = await sendMail({
-        sessionId,
+        sessionId: effectiveSessionId,
         user: {
           name: user?.name,
           email: user?.email,
@@ -360,7 +356,6 @@ ${chatHistoryText}
         className={inputClass}
         required
       />
-
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
