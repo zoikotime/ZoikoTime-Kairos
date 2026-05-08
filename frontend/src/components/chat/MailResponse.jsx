@@ -193,25 +193,7 @@ export default function MailResponse({ theme, onClose }) {
       .filter(Boolean)
       .join("\n\n");
 
-    const finalBody = `
-User Name: ${user?.name}
-User Email: ${user?.email}
-
-----------------------
-
-Issue:
-${subject}
-
-----------------------
-
-User Description:
-${body}
-
-----------------------
-
-Chat History:
-${chatHistoryText}
-`;
+    const finalBody = body.trim() || null;
 
     const chatHistoryHtml = messages
       .slice(-10)
