@@ -153,9 +153,9 @@ export default function MessageBubble({
     >
       {!isUser && (
         <div className="relative h-8 w-8">
-          <div className="h-8 w-8 rounded-full bg-[#e6f4f7] flex items-center justify-center">
+          <div className="h-8 w-8 rounded-full bg-[#e6f4f7] flex items-center justify-center overflow-hidden border-2 border-[#15B5C4]">
             <span className="text-[0.72rem] font-semibold text-[#1d4e61]">
-              <img src="./response-icon.png" alt="" />
+              <img src="./response-icon.png" alt="" className="h-full w-full object-contain" />
             </span>
           </div>
         </div>

@@ -12,26 +12,32 @@ import {
 import { fetchHistory } from "../services/api";
 
 const defaultAssistantContext = {
-  assistantName: "Koiris",
+  assistantName: "Kairos",
   productName: "ZoikoTime Desktop Application",
   assistantBadge: "AI WORK ASSISTANT",
   statusText: "Live knowledge base active",
   welcomeMessage:
-    "Hey there! I'm Koiris, your ZoikoTime support assistant.\n\nI can help with attendance, activity tracking, screenshots, leave, pay, privacy, settings, and technical issues.\n\nWhat would you like help with today?",
+    "Hey there! I'm Kairos, your ZoikoTime support assistant.\n\nI can help with attendance, activity tracking, screenshots, leave, pay, privacy, settings, and technical issues.\n\nWhat would you like help with today?",
   welcomeMessageHi:
-    "Namaste! Main Koiris hoon, aapka ZoikoTime support assistant.\n\nMain attendance, activity tracking, screenshots, leave, pay, privacy, settings aur technical issues mein help kar sakta hoon.\n\nAaj main kis cheez mein help karun?",
+    "Namaste! Main Kairos hoon, aapka ZoikoTime support assistant.\n\nMain attendance, activity tracking, screenshots, leave, pay, privacy, settings aur technical issues mein help kar sakta hoon.\n\nAaj main kis cheez mein help karun?",
   quickActions: [],
   defaultSuggestions: [],
   retentionHours: 24,
 };
 
-function getWelcomeContent(language, assistantContext = defaultAssistantContext) {
+function getWelcomeContent(
+  language,
+  assistantContext = defaultAssistantContext,
+) {
   return language === "hi"
     ? assistantContext.welcomeMessageHi || assistantContext.welcomeMessage
     : assistantContext.welcomeMessage;
 }
 
-function createWelcomeMessage(language, assistantContext = defaultAssistantContext) {
+function createWelcomeMessage(
+  language,
+  assistantContext = defaultAssistantContext,
+) {
   return [
     {
       id: "welcome",
@@ -46,7 +52,11 @@ function createWelcomeMessage(language, assistantContext = defaultAssistantConte
 async function fetchSessionHistory(sessionId) {
   try {
     const data = await fetchHistory(sessionId);
-    if (data.success && Array.isArray(data.messages) && data.messages.length > 0) {
+    if (
+      data.success &&
+      Array.isArray(data.messages) &&
+      data.messages.length > 0
+    ) {
       return data.messages.map((m) => ({
         id: m.id,
         role: m.role,

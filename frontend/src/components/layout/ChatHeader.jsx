@@ -77,7 +77,7 @@ export default function ChatHeader({
       {/* ── Logo + Title + Badge ── */}
       <div className="flex flex-1 items-center gap-3 min-w-0 ">
         {/* ✅ FIXED LOGO ONLY */}
-        <div className="relative flex items-center">
+        <div className="relative flex items-center ">
           {/* Desktop Logo */}
           <img
             src="./logo.png"
@@ -86,11 +86,15 @@ export default function ChatHeader({
           />
 
           {/* Mobile / Tablet Logo */}
-          <img
-            src="./response-icon.png"
-            alt="mobile logo"
-            className="block lg:hidden h-7 w-auto object-contain"
-          />
+          <div className="block lg:hidden h-8 w-8 rounded-full overflow-hidden border-2 border-[#3FB97A]">
+
+            <img
+              src="./response-icon.png"
+              alt="mobile logo"
+              className="block lg:hidden h-full w-full object-cover "
+            />
+            </div>
+          
 
           {/* Indicator */}
           <span className="absolute -bottom-0 -right-0 h-2 w-2 rounded-full bg-green-500 border border-white"></span>
@@ -103,7 +107,7 @@ export default function ChatHeader({
               isDark ? "text-[#d4f0dc]" : "text-[#0f3d20]"
             }`}
           >
-            Kioris
+            Kairos
           </span>
           <span
             className={`inline-flex w-fit items-center rounded-full px-2 py-[2px] text-[0.6rem] font-black uppercase tracking-wider leading-none ${

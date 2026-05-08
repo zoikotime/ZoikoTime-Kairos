@@ -180,7 +180,8 @@ export default function MailResponse({ theme, onClose }) {
 
     setSending(true);
 
-    const effectiveSessionId = sessionId || `manual_${user.email}_${Date.now()}`;
+    const effectiveSessionId =
+      sessionId || `manual_${user.email}_${Date.now()}`;
 
     const chatHistoryText = messages
       .slice(-10)
@@ -264,10 +265,6 @@ ${chatHistoryText}
       });
 
       if (data?.code === "EMAIL_LIMIT_REACHED") {
-        const waitTime = formatWaitTime(data.msBeforeNextReset || 86400 * 1000);
-        toast.error(`Daily mail limit reached. Try again in ${waitTime}.`, {
-          duration: 6000,
-        });
         if (onClose) onClose();
         return;
       }
@@ -286,11 +283,7 @@ ${chatHistoryText}
 
       const waitTime = err?.response?.data?.msBeforeNextReset;
       if (err?.response?.status === 429) {
-        setLimitState({
-          blocked: true,
-          remaining: 0,
-          waitText: formatWaitTime(waitTime || 86400 * 1000),
-        });
+        if (onClose) onClose();
         return;
       }
 

@@ -72,7 +72,7 @@ export default function OnboardingPage() {
     try {
       const response = await verifyUser(formData);
       await setUserSession(response);
-      toast.success("Koiris session started");
+      toast.success("Kairos session started");
       navigate("/chat");
     } catch (error) {
       toast.error(
@@ -90,10 +90,10 @@ export default function OnboardingPage() {
       className="page-shell"
       style={{
         display: "flex",
-        justifyContent: "flex-end",
-        alignItems: "flex-end",
-        padding: "1.5rem",
-        minHeight: "100vh",
+        justifyContent: "end",
+        alignItems: "center",
+        minHeight: "100dvh",
+        overflow: "hidden",
       }}
     >
       <motion.div
@@ -103,7 +103,7 @@ export default function OnboardingPage() {
         transition={{ duration: 0.5 }}
       >
         <div className="brand-row">
-          <div className="img-ctn h-14 w-14 rounded-full border-2 border-green-500">
+          <div className="img-ctn h-14 w-14 rounded-full border-2 border-green-500 overflow-hidden">
             <img
               src="./response-icon.png"
               alt=""
@@ -112,12 +112,12 @@ export default function OnboardingPage() {
           </div>
           <div>
             <p className="eyebrow">{copy.onboardingTag}</p>
-            <h1>Koiris</h1>
+            <h1>Kairos</h1>
           </div>
         </div>
 
         <p className="lead">
-          Start your secure session, then Koiris can help with attendance,
+          Start your secure session, then Kairos can help with attendance,
           screenshots, leave, payslips, privacy, settings, and technical
           troubleshooting inside ZoikoTime.
         </p>

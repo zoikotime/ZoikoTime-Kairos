@@ -52,7 +52,7 @@ export default function Composer({
             )}px`;
           }}
           onKeyDown={handleKeyDown}
-          placeholder="Ask Kioris anything about ZoikoTime..."
+          placeholder="Ask Kairos anything about ZoikoTime..."
           rows={1}
           disabled={isTyping}
           className={`flex-1 resize-none bg-transparent text-sm leading-relaxed outline-none disabled:opacity-50 ${
@@ -91,7 +91,7 @@ export default function Composer({
           isDark ? "text-[#587060]" : "text-[#78a285]"
         }`}
       >
-        Kioris · ZoikoTime AI · Source-grounded · Governed responses
+        Kairos · ZoikoTime AI · Source-grounded · Governed responses
       </p>
     </form>
   );

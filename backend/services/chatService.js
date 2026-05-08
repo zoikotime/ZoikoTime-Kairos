@@ -17,7 +17,7 @@ try {
 } catch (e) {
   console.error(`❌ Failed to load: ${knowledgePath}`, e.message);
   knowledgeDocument = {
-    _meta: { assistantName: "Koiris" },
+    _meta: { assistantName: "Kairos" },
     intents: [],
     fallback: "Knowledge base failed to load",
     default_suggestions: [],
@@ -52,14 +52,17 @@ async function trackUnknownPrompt(message) {
 
     return await NewPrompt.incrementOrCreate(prompt);
   } catch (error) {
-    console.error("[ChatService] Failed to track unknown prompt:", error.message);
+    console.error(
+      "[ChatService] Failed to track unknown prompt:",
+      error.message,
+    );
     return null;
   }
 }
 
 function personalizeText(text = "") {
   const assistantDisplayName =
-    knowledgeDocument?._meta?.assistantName || "Koiris";
+    knowledgeDocument?._meta?.assistantName || "Kairos";
   return text
     .replace(/\bKairos\b/g, assistantDisplayName)
     .replace(/\bZoikoTime assistant\b/g, `${assistantDisplayName} assistant`);
@@ -462,10 +465,7 @@ async function deleteConversation(sessionId, userEmail) {
     if (userEmail) convQuery = convQuery.eq("user_email", userEmail);
     await convQuery;
 
-    let chatQuery = supabase
-      .from("chats")
-      .delete()
-      .eq("session_id", sessionId);
+    let chatQuery = supabase.from("chats").delete().eq("session_id", sessionId);
     if (userEmail) chatQuery = chatQuery.eq("user_email", userEmail);
     await chatQuery;
   } catch (_error) {}
@@ -574,14 +574,17 @@ async function getUnknownPrompts() {
   try {
     return await NewPrompt.listAll();
   } catch (error) {
-    console.error("[ChatService] Failed to load unknown prompts:", error.message);
+    console.error(
+      "[ChatService] Failed to load unknown prompts:",
+      error.message,
+    );
     return [];
   }
 }
 
 function getChatContext() {
   const assistantName = personalizeText(
-    knowledgeDocument._meta?.assistantName || "Koiris",
+    knowledgeDocument._meta?.assistantName || "Kairos",
   );
   return {
     assistantName,

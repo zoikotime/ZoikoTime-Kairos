@@ -16,7 +16,7 @@ import Composer from "../components/chat/Composer";
 import MailResponse from "../components/chat/MailResponse";
 
 const WELCOME_TEXT =
-  "Hi there! I'm Kioris, your ZoikoTime assistant.\n\nI'm here to help with clock-in/out, activity, leave, pay, privacy, and anything else about ZoikoTime.\n\nWhat can I help you with today?";
+  "Hi there! I'm Kairos, your ZoikoTime assistant.\n\nI'm here to help with clock-in/out, activity, leave, pay, privacy, and anything else about ZoikoTime.\n\nWhat can I help you with today?";
 
 function createWelcomeMessage(text = WELCOME_TEXT) {
   return {
@@ -149,7 +149,7 @@ export default function ChatPage() {
         setLatestBotId(botMsg.id);
         replaceMessages([...nextMessages, botMsg]);
       } catch {
-        toast.error("Couldn't reach Koiris. Check your connection.");
+        toast.error("Couldn't reach Kairos. Check your connection.");
 
         const errMsg = normalizeMessage({
           id: `${Date.now()}-error`,
